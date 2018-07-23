@@ -1,4 +1,5 @@
 package cc.souco.toolbox.db;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -38,11 +39,11 @@ public class DatabaseMetaDateApplication {
      */
     public void getDataBaseInformations() {
         try {
-            System.out.println("数据库已知的用户: "+ dbMetaData.getUserName());
-            System.out.println("数据库的系统函数的逗号分隔列表: "+ dbMetaData.getSystemFunctions());
-            System.out.println("数据库的时间和日期函数的逗号分隔列表: "+ dbMetaData.getTimeDateFunctions());
-            System.out.println("数据库的字符串函数的逗号分隔列表: "+ dbMetaData.getStringFunctions());
-            System.out.println("数据库供应商用于 'schema' 的首选术语: "+ dbMetaData.getSchemaTerm());
+            System.out.println("数据库已知的用户: " + dbMetaData.getUserName());
+            System.out.println("数据库的系统函数的逗号分隔列表: " + dbMetaData.getSystemFunctions());
+            System.out.println("数据库的时间和日期函数的逗号分隔列表: " + dbMetaData.getTimeDateFunctions());
+            System.out.println("数据库的字符串函数的逗号分隔列表: " + dbMetaData.getStringFunctions());
+            System.out.println("数据库供应商用于 'schema' 的首选术语: " + dbMetaData.getSchemaTerm());
             System.out.println("数据库URL: " + dbMetaData.getURL());
             System.out.println("是否允许只读:" + dbMetaData.isReadOnly());
             System.out.println("数据库的产品名称:" + dbMetaData.getDatabaseProductName());
@@ -71,13 +72,13 @@ public class DatabaseMetaDateApplication {
     public void getAllTableList(String schemaName) {
         try {
             // table type. Typical types are "TABLE", "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY", "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
-            String[] types = { "TABLE" };
+            String[] types = {"TABLE"};
             ResultSet rs = dbMetaData.getTables(null, schemaName, "%", types);
             while (rs.next()) {
-                String tableName = rs.getString("TABLE_NAME");  //表名
-                String tableType = rs.getString("TABLE_TYPE");  //表类型
-                String remarks = rs.getString("REMARKS");       //表备注
-                System.out.println(tableName + "-" + tableType + "-" + remarks);
+                String tableName = rs.getString("TABLE_NAME");  // 表名
+                String tableType = rs.getString("TABLE_TYPE");  // 表类型
+                String remarks = rs.getString("REMARKS");       // 表备注
+                System.out.println("tableName:" + tableName + " tableType:" + tableType + " remarks:" + remarks);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -89,10 +90,10 @@ public class DatabaseMetaDateApplication {
      * 获得该用户下面的所有视图
      */
     public void getAllViewList(String schemaName) {
-        try{
-            String[] types = { "VIEW" };
+        try {
+            String[] types = {"VIEW"};
             ResultSet rs = dbMetaData.getTables(null, schemaName, "%", types);
-            while (rs.next()){
+            while (rs.next()) {
                 String viewName = rs.getString("TABLE_NAME"); //视图名
                 String viewType = rs.getString("TABLE_TYPE"); //视图类型
                 String remarks = rs.getString("REMARKS");      //视图备注
@@ -106,14 +107,14 @@ public class DatabaseMetaDateApplication {
     /**
      * 获得数据库中所有方案名称
      */
-    public void getAllSchemas(){
-        try{
+    public void getAllSchemas() {
+        try {
             ResultSet rs = dbMetaData.getSchemas();
-            while (rs.next()){
+            while (rs.next()) {
                 String tableSchem = rs.getString("TABLE_SCHEM");
                 System.out.println(tableSchem);
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -124,10 +125,10 @@ public class DatabaseMetaDateApplication {
      */
     public void getTableColumns(String schemaName, String tableName) {
 
-        try{
+        try {
 
             ResultSet rs = dbMetaData.getColumns(null, schemaName, tableName, "%");
-            while (rs.next()){
+            while (rs.next()) {
                 String tableCat = rs.getString("TABLE_CAT");//表目录（可能为空）
                 String tableSchemaName = rs.getString("TABLE_SCHEM");//表的架构（可能为空）
                 String tableName_ = rs.getString("TABLE_NAME");//表名
@@ -160,14 +161,19 @@ public class DatabaseMetaDateApplication {
                  * 空字串---如果不能确定它是否
                  * 列是自动递增的参数是未知
                  */
-                String isAutoincrement = rs.getString("IS_AUTOINCREMENT");
+                String isAutoincrement = null;
+                try {
+                    isAutoincrement = rs.getString("IS_AUTOINCREMENT");
+                } catch (SQLException e) {
+                    isAutoincrement = "";
+                }
 
                 System.out.println(tableCat + "-" + tableSchemaName + "-" + tableName_ + "-" + columnName + "-"
                         + dataType + "-" + dataTypeName + "-" + columnSize + "-" + decimalDigits + "-" + numPrecRadix
                         + "-" + nullAble + "-" + remarks + "-" + columnDef + "-" + sqlDataType + "-" + sqlDatetimeSub
                         + charOctetLength + "-" + ordinalPosition + "-" + isNullAble + "-" + isAutoincrement + "-");
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -177,9 +183,9 @@ public class DatabaseMetaDateApplication {
      * 获得一个表的索引信息
      */
     public void getIndexInfo(String schemaName, String tableName) {
-        try{
+        try {
             ResultSet rs = dbMetaData.getIndexInfo(null, schemaName, tableName, true, true);
-            while (rs.next()){
+            while (rs.next()) {
                 boolean nonUnique = rs.getBoolean("NON_UNIQUE");//非唯一索引(Can index values be non-unique. false when TYPE is  tableIndexStatistic   )
                 String indexQualifier = rs.getString("INDEX_QUALIFIER");//索引目录（可能为空）
                 String indexName = rs.getString("INDEX_NAME");//索引的名称
@@ -190,7 +196,7 @@ public class DatabaseMetaDateApplication {
                 int cardinality = rs.getInt("CARDINALITY");   //基数
                 System.out.println(nonUnique + "-" + indexQualifier + "-" + indexName + "-" + type + "-" + ordinalPosition + "-" + columnName + "-" + ascOrDesc + "-" + cardinality);
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -200,15 +206,15 @@ public class DatabaseMetaDateApplication {
      * 获得一个表的主键信息
      */
     public void getAllPrimaryKeys(String schemaName, String tableName) {
-        try{
+        try {
             ResultSet rs = dbMetaData.getPrimaryKeys(null, schemaName, tableName);
-            while (rs.next()){
+            while (rs.next()) {
                 String columnName = rs.getString("COLUMN_NAME");//列名
                 short keySeq = rs.getShort("KEY_SEQ");//序列号(主键内值1表示第一列的主键，值2代表主键内的第二列)
                 String pkName = rs.getString("PK_NAME"); //主键名称
                 System.out.println(columnName + "-" + keySeq + "-" + pkName);
             }
-        }catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -219,9 +225,9 @@ public class DatabaseMetaDateApplication {
      */
     public void getAllExportedKeys(String schemaName, String tableName) {
 
-        try{
+        try {
             ResultSet rs = dbMetaData.getExportedKeys(null, schemaName, tableName);
-            while (rs.next()){
+            while (rs.next()) {
                 String pkTableCat = rs.getString("PKTABLE_CAT");//主键表的目录（可能为空）
                 String pkTableSchem = rs.getString("PKTABLE_SCHEM");//主键表的架构（可能为空）
                 String pkTableName = rs.getString("PKTABLE_NAME");//主键表名
@@ -266,7 +272,7 @@ public class DatabaseMetaDateApplication {
                         + fkTableCat + "-" + fkTableSchem + "-" + fkTableName + "-" + fkColumnName + "-" + keySeq + "-"
                         + updateRule + "-" + delRule + "-" + fkName + "-" + pkName + "-" + deferRability);
             }
-        } catch (SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -285,15 +291,14 @@ public class DatabaseMetaDateApplication {
 
     public static void main(String[] args) {
         DatabaseMetaDateApplication metaData = new DatabaseMetaDateApplication();
-//      metaData.getDataBaseInformations();
-//      metaData.getAllTableList(null);
-//      metaData.getAllViewList(null);
-//      metaData.getAllSchemas();
-//      metaData.getTableColumns(null, "zsc_admin");
-//      metaData.getIndexInfo(null, "zsc_admin");
-//      metaData.getAllPrimaryKeys(null, "zsc_admin");
-        metaData.getAllExportedKeys("", null);
-
+        // metaData.getDataBaseInformations();
+        // metaData.getAllTableList("HR");
+        // metaData.getAllViewList("HR");
+        // metaData.getAllSchemas();
+        metaData.getTableColumns("JEEPLUS", null);
+        // metaData.getIndexInfo(null, "zsc_admin");
+        // metaData.getAllPrimaryKeys(null, "zsc_admin");
+        // metaData.getAllExportedKeys("", null);
 
     }
 }
