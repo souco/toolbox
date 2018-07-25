@@ -11,7 +11,7 @@ import java.sql.*;
 import java.util.List;
 
 public class DbUtil {
-    private final static Logger LOGGER = LoggerFactory.getLogger(DbUtil.class);
+    private final static Logger logger = LoggerFactory.getLogger(DbUtil.class);
 
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
@@ -51,7 +51,6 @@ public class DbUtil {
                     String columnName = columnRs.getString("COLUMN_NAME");//列名
                     String dataTypeName = columnRs.getString("TYPE_NAME");//java.sql.Types类型   名称
                     int columnSize = columnRs.getInt("COLUMN_SIZE");//列大小
-                    int nullAble = columnRs.getInt("NULLABLE");//是否允许为null
                     String remarks = columnRs.getString("REMARKS");//列描述
                     String columnDef = columnRs.getString("COLUMN_DEF");//默认值
                     String isNullable = columnRs.getString("IS_NULLABLE");
