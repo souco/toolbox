@@ -6,15 +6,17 @@ public class Table {
     private String name;
     private String type;
     private String remarks;
+    private Integer rowCount;
     private List<TableColumn> columns;
 
     public Table() {
     }
 
-    public Table(String name, String type, String remarks) {
+    public Table(String name, String type, String remarks, Integer rowCount) {
         this.name = name;
         this.type = type;
         this.remarks = remarks;
+        this.rowCount = rowCount;
     }
 
     public String getName() {
@@ -49,12 +51,21 @@ public class Table {
         this.columns = columns;
     }
 
+    public Integer getRowCount() {
+        return rowCount;
+    }
+
+    public void setRowCount(Integer rowCount) {
+        this.rowCount = rowCount;
+    }
+
     @Override
     public String toString() {
         return "Table{" +
                 "name='" + name + '\'' +
                 ", type='" + type + '\'' +
                 ", remarks='" + remarks + '\'' +
+                ", rowCount='" + rowCount + '\'' +
                 ", columns=" + columns +
                 '}';
     }

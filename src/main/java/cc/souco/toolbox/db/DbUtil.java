@@ -35,15 +35,36 @@ public class DbUtil {
         }
     }
 
-    public List<Table> listTables(String schemaName) {
+    public List<Table> listTables(String schemaName){
         List tables = Lists.newArrayList();
+        String tableRowCountSql;
         try {
-            ResultSet tableRs = dbMetaData.getTables(null, schemaName, null, null);
+            ResultSet tableRs = dbMetaData.getTables(null, schemaName, "%", null);
             while (tableRs.next()) {
                 String tableName = tableRs.getString("TABLE_NAME");  // 表名
+
+                if (tableName.contains("BIN$")) {
+                    continue;
+                }
+
                 String tableType = tableRs.getString("TABLE_TYPE");  // 表类型
                 String tableRemarks = tableRs.getString("REMARKS");
-                Table table = new Table(tableName, tableType, tableRemarks);
+
+                Integer rowCount = 0;
+
+                try {
+                    tableRowCountSql = "select count(*) as DATA_ROW_COUNT from " + tableName;
+                    logger.info(tableRowCountSql);
+                    PreparedStatement ps = con.prepareStatement(tableRowCountSql);
+                    ResultSet rowCountRs = ps.executeQuery();
+                    while (rowCountRs.next()) {
+                        rowCount = rowCountRs.getInt("DATA_ROW_COUNT");
+                    }
+                } catch (Exception e) {
+                    continue;
+                }
+
+                Table table = new Table(tableName, tableType, tableRemarks, rowCount);
 
                 List<TableColumn> columns = Lists.newArrayList();
                 ResultSet columnRs = dbMetaData.getColumns(null, schemaName, tableName, null);
