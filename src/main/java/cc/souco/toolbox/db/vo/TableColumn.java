@@ -3,10 +3,12 @@ package cc.souco.toolbox.db.vo;
 public class TableColumn {
     private String name;
     private String type;
-    private Integer size;
-    private Boolean nullable;
-    private String remarks;
-    private String defaultValue;
+    private Integer size;  //  字段大小
+    private Boolean nullable;  // 是否可空
+    private String remarks;  // 备注
+    private String enumerable;  // 可枚举的
+    private String enumerateValue;  // 枚举值
+    private String defaultValue;  // 默认值
 
     public TableColumn() {
     }

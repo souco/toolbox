@@ -3,10 +3,12 @@ package cc.souco.toolbox.db.vo;
 import java.util.List;
 
 public class Table {
-    private String name;
-    private String type;
-    private String remarks;
-    private List<TableColumn> columns;
+    private String name;  // 表名
+    private String type;  // 类型
+    private String remarks;  // 表注释
+    private String primaryKey;  // 主键
+    private Integer rowCount;  // 行数
+    private List<TableColumn> columns;  // 表的列属性
 
     public Table() {
     }
@@ -41,6 +43,22 @@ public class Table {
         this.remarks = remarks;
     }
 
+    public String getPrimaryKey() {
+        return primaryKey;
+    }
+
+    public void setPrimaryKey(String primaryKey) {
+        this.primaryKey = primaryKey;
+    }
+
+    public Integer getRowCount() {
+        return rowCount;
+    }
+
+    public void setRowCount(Integer rowCount) {
+        this.rowCount = rowCount;
+    }
+
     public List<TableColumn> getColumns() {
         return columns;
     }
@@ -55,6 +73,8 @@ public class Table {
                 "name='" + name + '\'' +
                 ", type='" + type + '\'' +
                 ", remarks='" + remarks + '\'' +
+                ", primaryKey='" + primaryKey + '\'' +
+                ", rowCount=" + rowCount +
                 ", columns=" + columns +
                 '}';
     }
