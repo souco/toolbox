@@ -51,6 +51,11 @@ public class DbUtil {
             ResultSet tableRs = dbMetaData.getTables(null, schemaName, "%%", new String[]{TYPE_TABLE});
             while (tableRs.next()) {
                 String tableName = tableRs.getString("TABLE_NAME");  // 表名
+
+                if (tableName.contains("BIN$")) {
+                    continue;
+                }
+
                 String tableType = tableRs.getString("TABLE_TYPE");  // 表类型
                 String tableRemarks = tableRs.getString("REMARKS");
                 Table table = new Table(tableName, tableType, tableRemarks);

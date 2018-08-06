@@ -7,6 +7,8 @@ import nl.basjes.parse.useragent.UserAgentAnalyzer;
 import org.springframework.util.StringUtils;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class LogAnalyzeUtil {
@@ -15,15 +17,31 @@ public class LogAnalyzeUtil {
     private static UserAgentAnalyzer uaa = null;
 
     public static void main(String[] args) {
-        String fileName = "wt.log_2018-07-17.log";
+        List<String> fileNames = Lists.newArrayList("wt.log_2018-07-17.log");
+        fileNames.add("wt.log_2018-07-17.log");
+        fileNames.add("wt.log_2018-07-18.log");
+        fileNames.add("wt.log_2018-07-19.log");
+        fileNames.add("wt.log_2018-07-20.log");
+        fileNames.add("wt.log_2018-07-21.log");
+        fileNames.add("wt.log_2018-07-22.log");
+        fileNames.add("wt.log_2018-07-23.log");
+        fileNames.add("wt.log_2018-07-24.log");
+        fileNames.add("wt.log_2018-07-25.log");
+        fileNames.add("wt.log_2018-07-26.log");
 
-        Map<String, Map<String, Integer>> analyzeResult = analyzeSecond(analyze(LOG_FILE_PATH + File.separator + fileName, analyse));
+        Map<String, Map<String, Integer>> analyzeResult = Maps.newHashMap();
 
-        analyzeResult.remove("userAgent");
-        analyzeResult.remove("url");
-        analyzeResult.remove("ip");
-        analyzeResult.remove("contentType");
-        analyzeResult.remove("urlSuffix");
+        for (String fileName : fileNames) {
+            analyze(analyzeResult, LOG_FILE_PATH + File.separator + fileName, analyse);
+        }
+
+        analyzeSecond(analyzeResult);
+
+        // analyzeResult.remove("userAgent");
+        // analyzeResult.remove("url");
+        // analyzeResult.remove("ip");
+        // analyzeResult.remove("contentType");
+        // analyzeResult.remove("urlSuffix");
 
         Set<Map.Entry<String, Map<String, Integer>>> mapEntries = analyzeResult.entrySet();
         for (Map.Entry<String, Map<String, Integer>> analyzeMap : mapEntries) {
@@ -33,8 +51,20 @@ public class LogAnalyzeUtil {
             Map<String, Integer> analysis = analyzeMap.getValue();
             ArrayList<Map.Entry<String, Integer>> analysisList = new ArrayList<>(analysis.entrySet());
             analysisList.sort((o1, o2) -> o2.getValue() - o1.getValue());
+            int sum = 0;
             for (Map.Entry<String, Integer> analyze : analysisList) {
-                System.out.println(analyze.getKey() + " : " + analyze.getValue());
+                sum +=  analyze.getValue();
+            }
+
+            int count = 0;
+            for (Map.Entry<String, Integer> analyze : analysisList) {
+                if (++count > 20) {
+                    break;
+                }
+
+                String ratio = new BigDecimal(analyze.getValue().doubleValue() * 100 / sum).setScale(4, RoundingMode.HALF_UP).toString();
+                // System.out.println(analyze.getKey() + " : " + analyze.getValue() + "\t\t" + ratio + "%");
+                System.out.printf("%-30s%10s\t%s\n", analyze.getKey(), analyze.getValue().toString(), ratio + "%");  // "X$"表示第几个变量。
             }
         }
     }
@@ -45,8 +75,11 @@ public class LogAnalyzeUtil {
      * @param analysis 分析的字段
      * @return 分析结果
      */
-    public static Map<String, Map<String, Integer>> analyze(String filePath, List<String> analysis) {
-        HashMap<String, Map<String, Integer>> result = new HashMap<>();
+    public static Map<String, Map<String, Integer>> analyze(Map<String, Map<String, Integer>> result, String filePath, List<String> analysis) {
+        if (result == null) {
+            result = Maps.newHashMap();
+        }
+
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(
                     new FileInputStream(new File(filePath)), "UTF-8"));
