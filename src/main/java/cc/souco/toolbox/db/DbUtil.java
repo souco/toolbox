@@ -1,6 +1,5 @@
 package cc.souco.toolbox.db;
 
-import cc.souco.toolbox.common.StringUnicodeUtil;
 import cc.souco.toolbox.db.vo.Database;
 import cc.souco.toolbox.db.vo.Table;
 import cc.souco.toolbox.db.vo.TableColumn;
@@ -25,7 +24,7 @@ public class DbUtil {
     private static final String TYPE_TABLE = "TABLE";
     private static final int TABLE_ENUM_TABLE_ROW_COUNT = 30;
     private static final int COLUMN_ENUM_TABLE_ROW_COUNT = 20;
-    private Pattern abnormalPattern = Pattern.compile("^((\\w)||([u4e00-u9fa5]))");
+    private static final int ENUMERATE_VALUE_LENGTH = 200;
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
 
@@ -56,6 +55,7 @@ public class DbUtil {
             while (tableRs.next()) {
                 String tableName = tableRs.getString("TABLE_NAME");  // 表名
 
+                // 排除系统表
                 if (tableName.contains("BIN$") || tableName.contains("SESSION")) {
                     continue;
                 }
@@ -69,9 +69,9 @@ public class DbUtil {
             }
             tableRs.close();
 
+            // 获取表的详细信息
             for (Table table : tables) {
                 getTableDetail(table);
-
             }
 
         } catch (SQLException e) {
@@ -81,6 +81,11 @@ public class DbUtil {
         return tables;
     }
 
+    /**
+     * 获取表详细信息
+     * @param table 表对象
+     * @throws SQLException
+     */
     private void getTableDetail(Table table) throws SQLException {
         PreparedStatement ps;
         ResultSet rs;// 获取主键信息
@@ -146,6 +151,7 @@ public class DbUtil {
         }
         columnRs.close();
 
+        // 获取表字段的详细信息
         for(TableColumn column : columns){
             getTableColumnDetail(table, column);
         }
@@ -153,6 +159,12 @@ public class DbUtil {
         table.setColumns(columns);
     }
 
+    /**
+     * 获取表字段的详细信息
+     * @param table 表对象
+     * @param tableColumn 表的列对象
+     * @throws SQLException
+     */
     private void getTableColumnDetail(Table table, TableColumn tableColumn) throws SQLException {
         String columnName = tableColumn.getName();
         String dataTypeName = tableColumn.getType();
@@ -193,44 +205,22 @@ public class DbUtil {
             rs = ps.executeQuery();
             while (rs.next()) {
                 String value = rs.getString(columnName.toUpperCase());
-                /*if (StringUtils.isNoneBlank(value)) {
-                    Matcher matcher = abnormalPattern.matcher(value);
-                    if (matcher.find()) {
-                        System.out.println(value);
-                        sb = new StringBuilder();
-                        break;
-                    }
-                }*/
-                sb.append(value).append(",");
+                if (isSpecial(value)) {
+                    sb = new StringBuilder();
+                    break;
+                } else {
+                    sb.append(value).append(",");
+                }
             }
             rs.close();
             ps.close();
         }
         if (sb.length() > 0) {
             String enumerateValue = sb.substring(0, sb.length() - 1);
-            if (StringUtils.isBlank(enumerateValue)
-                    || enumerateValue.contains("<")
-                    || enumerateValue.contains(">")
-                    || enumerateValue.contains("\\f")
-                    || enumerateValue.length() > 200) {
+            if (StringUtils.isBlank(enumerateValue) || enumerateValue.length() > ENUMERATE_VALUE_LENGTH) {
                 tableColumn.setEnumerateValue("");
             } else {
-                tableColumn.setEnumerateValue(StringUnicodeUtil.unicodeStr2String(transform(enumerateValue)));
-            }
-        }
-    }
-
-    public static void executeSql(Connection conn, String sql) throws Exception{
-        PreparedStatement ps = null;
-        try {
-            ps = conn.prepareStatement(sql);
-            ps.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new Exception();
-        } finally {
-            if (ps != null){
-                ps.close();
+                tableColumn.setEnumerateValue(transform(enumerateValue));
             }
         }
     }
@@ -267,6 +257,23 @@ public class DbUtil {
             str=str.replaceAll(">", "&gt;");
         }
         return str;
+    }
+
+    /**
+     * 目标字符串是否包含字符 \
+     * @param value
+     * @return
+     */
+    public static boolean isSpecial(String value) {
+        if (StringUtils.isBlank(value)) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) == '\\') {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void main(String[] args) {
