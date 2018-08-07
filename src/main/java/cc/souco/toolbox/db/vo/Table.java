@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Table {
     private String name;  // 表名
+    private String schema;
     private String type;  // 类型
     private String remarks;  // 表注释
     private String primaryKey;  // 主键
@@ -33,6 +34,14 @@ public class Table {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
     }
 
     public String getRemarks() {

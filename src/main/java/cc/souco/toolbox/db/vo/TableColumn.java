@@ -6,7 +6,7 @@ public class TableColumn {
     private Integer size;  //  字段大小
     private Boolean nullable;  // 是否可空
     private String remarks;  // 备注
-    private String enumerable;  // 可枚举的
+    private Boolean enumerable;  // 可枚举的
     private String enumerateValue;  // 枚举值
     private String defaultValue;  // 默认值
 
@@ -20,6 +20,7 @@ public class TableColumn {
         this.nullable = nullable;
         this.remarks = remarks;
         this.defaultValue = defaultValue;
+        this.enumerable = false;
     }
 
     public String getName() {
@@ -50,6 +51,10 @@ public class TableColumn {
         return nullable;
     }
 
+    public Boolean getNullable(){
+        return nullable;
+    }
+
     public void setNullable(Boolean nullable) {
         this.nullable = nullable;
     }
@@ -68,6 +73,22 @@ public class TableColumn {
 
     public void setDefaultValue(String defaultValue) {
         this.defaultValue = defaultValue;
+    }
+
+    public Boolean getEnumerable() {
+        return enumerable;
+    }
+
+    public void setEnumerable(Boolean enumerable) {
+        this.enumerable = enumerable;
+    }
+
+    public String getEnumerateValue() {
+        return enumerateValue;
+    }
+
+    public void setEnumerateValue(String enumerateValue) {
+        this.enumerateValue = enumerateValue;
     }
 
     @Override
