@@ -25,6 +25,8 @@ public class DbUtil {
     private static final int TABLE_ENUM_TABLE_ROW_COUNT = 30;
     private static final int COLUMN_ENUM_TABLE_ROW_COUNT = 20;
     private static final int ENUMERATE_VALUE_LENGTH = 200;
+    private static final boolean IS_TABLE_COUNT = false;
+    private static final int TABLE_COUNT = 20;
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
 
@@ -50,7 +52,7 @@ public class DbUtil {
     public List<Table> listTables(String schemaName) {
         List<Table> tables = Lists.newArrayList();
         try {
-
+            int count = 0;
             ResultSet tableRs = dbMetaData.getTables(null, schemaName, "%%", new String[]{TYPE_TABLE});
             while (tableRs.next()) {
                 String tableName = tableRs.getString("TABLE_NAME");  // 表名
@@ -66,6 +68,9 @@ public class DbUtil {
 
                 table.setSchema(schemaName);
                 tables.add(table);
+                if (IS_TABLE_COUNT && ++count > TABLE_COUNT) {
+                    break;
+                }
             }
             tableRs.close();
 
