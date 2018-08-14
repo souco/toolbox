@@ -230,29 +230,28 @@ public class DbUtil {
         }
     }
 
-    public Database analyzeDatabase(String ... args) {
-        Database database = new Database();
+    public List<Database> analyzeDatabase(String ... args) {
+        List<Database> databases = Lists.newArrayList();
 
-        try {
-            String databaseVersion = dbMetaData.getDatabaseProductVersion();
-            database.setVersion(databaseVersion);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        for (String schema : args) {
+            Database database = new Database();
+
+            // 获取数据库版本信息
+            try {
+                String databaseVersion = dbMetaData.getDatabaseProductVersion();
+                database.setVersion(databaseVersion);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+            // 设置数据库 schema
+            database.setSchema(schema);
+            database.setTables(listTables(schema));
+
+            databases.add(database);
         }
 
-        List<String> schemas = Lists.newArrayList(args);
-        database.setSchemas(schemas);
-
-        List<Table> tables = Lists.newArrayList();
-        for (String schema : schemas) {
-            tables.addAll(listTables(schema));
-        }
-        database.setTables(tables);
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-        database.setDate(sdf.format(new Date()));
-
-        return database;
+        return databases;
     }
 
     private String transform(String str){
@@ -284,7 +283,7 @@ public class DbUtil {
     public static void main(String[] args) {
         DbUtil dbUtil = new DbUtil();
         // Database db = dbUtil.analyzeDatabase("aa", "bb", "cc");
-        Database db = dbUtil.analyzeDatabase("aa");
+        List<Database> db = dbUtil.analyzeDatabase("aa");
         System.out.println(JSONObject.toJSON(db));
     }
 }

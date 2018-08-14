@@ -11,6 +11,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ExportWord {
@@ -28,7 +29,7 @@ public class ExportWord {
         Template t = null;
         try {
             // 获取模板文件
-            t = configuration.getTemplate("/dbExport.ftl");
+            t = configuration.getTemplate("/databaseDetailTemplate.ftl");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -57,20 +58,24 @@ public class ExportWord {
 
     public static void main(String[] args) {
         DbUtil dbUtil = new DbUtil();
-        // Database db = dbUtil.analyzeDatabase("aa","bb", "cc);
-        Database db = dbUtil.analyzeDatabase("aa");
+        String[] schemas = {"aa", "bb"};
+        List<Database> databases = dbUtil.analyzeDatabase(schemas);
         Map<String, Object> map = Maps.newHashMap();
-        map.put("database", db);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        String date = sdf.format(new Date());
+        map.put("date", date);
+        map.put("schemas", Arrays.toString(schemas));
+        map.put("version", databases.get(0).getVersion());
+        map.put("databases", databases);
 
-        // System.out.println(JSONObject.toJSON(db));
-        // new ExportWord().export(map, "E:/ProjectData");
-        checkError(db);
+        System.out.println(JSONObject.toJSON(databases));
+        new ExportWord().export(map, "E:/ProjectData");
     }
 
     public static void checkError(Database db){
-        Map<String, Database> map = Maps.newHashMap();
+        Map<String, Object> map = Maps.newHashMap();
         List<Table> tables = db.getTables();
-        tables = tables.subList(tables.size() - 100, tables.size()-82);
+        tables = tables.subList(tables.size() - 84, tables.size()-82);
         db.setTables(tables);
         map.put("database", db);
 
