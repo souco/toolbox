@@ -473,7 +473,7 @@
                                 <w:p w14:paraId="6040081A" w14:textId="50BB6AFF" w:rsidR="003C54A9"
                                      w:rsidRDefault="003C54A9">
                                     <w:r>
-                                        <w:t>${table_index + 1}</w:t>
+                                        <w:t>${tabCol_index + 1}</w:t>
                                     </w:r>
                                 </w:p>
                             </w:tc>
