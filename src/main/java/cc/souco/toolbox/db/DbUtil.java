@@ -50,10 +50,14 @@ public class DbUtil {
     }
 
     public List<Table> listTables(String schemaName) {
+        return listTables(schemaName, "%%");
+    }
+
+    public List<Table> listTables(String schemaName, String tablePattern) {
         List<Table> tables = Lists.newArrayList();
         try {
             int count = 0;
-            ResultSet tableRs = dbMetaData.getTables(null, schemaName, "%%", new String[]{TYPE_TABLE});
+            ResultSet tableRs = dbMetaData.getTables(null, schemaName, tablePattern, new String[]{TYPE_TABLE});
             while (tableRs.next()) {
                 String tableName = tableRs.getString("TABLE_NAME");  // 表名
 
@@ -68,7 +72,7 @@ public class DbUtil {
 
                 table.setSchema(schemaName);
                 tables.add(table);
-                if (IS_TABLE_COUNT && ++count > TABLE_COUNT) {
+                if (IS_TABLE_COUNT && ++count >= TABLE_COUNT) {
                     break;
                 }
             }
@@ -230,10 +234,10 @@ public class DbUtil {
         }
     }
 
-    public List<Database> analyzeDatabase(String ... args) {
+    public List<Database> analyzeDatabase(List<String> schemas) {
         List<Database> databases = Lists.newArrayList();
 
-        for (String schema : args) {
+        for (String schema : schemas) {
             Database database = new Database();
 
             // 获取数据库版本信息
@@ -274,16 +278,15 @@ public class DbUtil {
         }
         for (int i = 0; i < value.length(); i++) {
             if (value.charAt(i) == '\\') {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public static void main(String[] args) {
         DbUtil dbUtil = new DbUtil();
-        // Database db = dbUtil.analyzeDatabase("aa", "bb", "cc");
-        List<Database> db = dbUtil.analyzeDatabase("aa");
+        List<Table> db = dbUtil.listTables("SC_FGW", "C_INS_BUSINESS_INFO");
         System.out.println(JSONObject.toJSON(db));
     }
 }
