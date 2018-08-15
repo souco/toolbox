@@ -65,7 +65,7 @@ public class ExportWord {
     }
 
     public static void main(String[] args) {
-        List<String> schemas = Lists.newArrayList("aa", "bb");
+        List<String> schemas = Lists.newArrayList("SC_FGW", "SC_FGWCMS");
         DbUtil dbUtil = new DbUtil();
         List<Database> databases = dbUtil.analyzeDatabase(schemas);
         Map<String, Object> map = Maps.newHashMap();

@@ -1,5 +1,6 @@
 package cc.souco.toolbox.db;
 
+import cc.souco.toolbox.common.StringKit;
 import cc.souco.toolbox.db.vo.Database;
 import cc.souco.toolbox.db.vo.Table;
 import cc.souco.toolbox.db.vo.TableColumn;
@@ -11,12 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class DbUtil {
     private final static Logger logger = LoggerFactory.getLogger(DbUtil.class);
@@ -214,7 +212,7 @@ public class DbUtil {
             rs = ps.executeQuery();
             while (rs.next()) {
                 String value = rs.getString(columnName.toUpperCase());
-                if (isSpecial(value)) {
+                if (StringKit.isSpecialString(value)) {
                     sb = new StringBuilder();
                     break;
                 } else {
@@ -229,7 +227,7 @@ public class DbUtil {
             if (StringUtils.isBlank(enumerateValue) || enumerateValue.length() > ENUMERATE_VALUE_LENGTH) {
                 tableColumn.setEnumerateValue("");
             } else {
-                tableColumn.setEnumerateValue(transform(enumerateValue));
+                tableColumn.setEnumerateValue(enumerateValue);
             }
         }
     }
@@ -258,35 +256,9 @@ public class DbUtil {
         return databases;
     }
 
-    private String transform(String str){
-        if(str.contains("<")||str.contains(">")||str.contains("&")){
-            str=str.replaceAll("&", "&amp;");
-            str=str.replaceAll("<", "&lt;");
-            str=str.replaceAll(">", "&gt;");
-        }
-        return str;
-    }
-
-    /**
-     * 目标字符串是否包含字符 \
-     * @param value
-     * @return
-     */
-    public static boolean isSpecial(String value) {
-        if (StringUtils.isBlank(value)) {
-            return false;
-        }
-        for (int i = 0; i < value.length(); i++) {
-            if (value.charAt(i) == '\\') {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static void main(String[] args) {
         DbUtil dbUtil = new DbUtil();
-        List<Table> db = dbUtil.listTables("SC_FGW", "C_INS_BUSINESS_INFO");
+        List<Table> db = dbUtil.listTables("SC_FGWCMS", "JC_SITE_FLOW");
         System.out.println(JSONObject.toJSON(db));
     }
 }
