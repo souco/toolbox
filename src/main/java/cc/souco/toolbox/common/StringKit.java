@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 public class StringKit {
 
     /**
-     * 目标字符串是否包含字符 \
+     * 目标字符串是否包含字符 \ < > &  /
      * @param value
      * @return
      */
@@ -20,8 +20,8 @@ public class StringKit {
                     || label ==  '>'
                     || label ==  '&'
                     || label == '/'
-                    || label == '\u0001'
-                    || label == '\u0002'
+                    // || label == '\u0001'
+                    // || label == '\u0002'
                     || label == '\f' ) {
                 return true;
             }
