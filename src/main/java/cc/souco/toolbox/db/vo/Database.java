@@ -1,12 +1,17 @@
 package cc.souco.toolbox.db.vo;
 
+import com.beust.jcommander.internal.Lists;
+import org.apache.commons.lang3.time.DateFormatUtils;
+
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Database {
 
     private String version;
-    private String schema;
-    private List<Table> tables;
+    private Date date = new Date();
+    private List<Schema> schemas;
 
     public String getVersion() {
         return version;
@@ -16,19 +21,34 @@ public class Database {
         this.version = version;
     }
 
-    public String getSchema() {
-        return schema;
+    public Date getDate() {
+        return date;
     }
 
-    public void setSchema(String schema) {
-        this.schema = schema;
+    public String getDateStr() {
+        return DateFormatUtils.format(date, "yyyy-MM-dd hh:mm:ss");
     }
 
-    public List<Table> getTables() {
-        return tables;
+    public void setDate(Date date) {
+        this.date = date;
     }
 
-    public void setTables(List<Table> tables) {
-        this.tables = tables;
+    public List<Schema> getSchemas() {
+        if (schemas == null) {
+            schemas = new ArrayList<>();
+        }
+        return schemas;
+    }
+
+    public String getSchemasStr(){
+        String schema = "";
+        for (Schema item : getSchemas()) {
+            schema += item.getName() + ",";
+        }
+        return schema.length() > 0 ? schema.substring(0, schema.length() - 1) : schema;
+    }
+
+    public void setSchemas(List<Schema> schemas) {
+        this.schemas = schemas;
     }
 }

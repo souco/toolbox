@@ -1,12 +1,16 @@
 package cc.souco.toolbox.db;
 
+import cc.souco.toolbox.common.SysConfig;
 import cc.souco.toolbox.common.StringKit;
 import cc.souco.toolbox.db.vo.Database;
+import cc.souco.toolbox.db.vo.Schema;
 import cc.souco.toolbox.db.vo.Table;
-import cc.souco.toolbox.db.vo.TableColumn;
+import cc.souco.toolbox.db.vo.Column;
+import cc.souco.toolbox.db.vo.code.ColumnType;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Lists;
 import com.beust.jcommander.internal.Maps;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,28 +20,28 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-public class DbUtil {
-    private final static Logger logger = LoggerFactory.getLogger(DbUtil.class);
+public class DbAnalyze {
+    private final static Logger logger = LoggerFactory.getLogger(DbAnalyze.class);
     private static final String BOOLEAN_YES = "yes";
     private static final String TYPE_TABLE = "TABLE";
     private static final int TABLE_ENUM_TABLE_ROW_COUNT = 30;
     private static final int COLUMN_ENUM_TABLE_ROW_COUNT = 20;
     private static final int ENUMERATE_VALUE_LENGTH = 200;
-    private static final boolean IS_TABLE_COUNT = false;
-    private static final int TABLE_COUNT = 20;
+    private static final boolean IS_TABLE_COUNT = true;
+    private static final int TABLE_COUNT = 5;
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
 
 
-    public DbUtil() {
+    public DbAnalyze() {
         this.getDatabaseMetaData();
     }
 
     private void getDatabaseMetaData() {
         try {
             if (dbMetaData == null) {
-                Class.forName(DbConfig.DRIVER);
-                con = DriverManager.getConnection(DbConfig.URL, DbConfig.USERNAME, DbConfig.PASSWORD);
+                Class.forName(SysConfig.DRIVER);
+                con = DriverManager.getConnection(SysConfig.URL, SysConfig.USERNAME, SysConfig.PASSWORD);
                 dbMetaData = con.getMetaData();
             }
         } catch (ClassNotFoundException e) {
@@ -143,7 +147,7 @@ public class DbUtil {
         rs.close();
         ps.close();
 
-        List<TableColumn> columns = Lists.newArrayList();
+        List<Column> columns = Lists.newArrayList();
         ResultSet columnRs = dbMetaData.getColumns(null, table.getSchema(), table.getName(), null);
         while (columnRs.next()) {
             String columnName = columnRs.getString("COLUMN_NAME");//列名
@@ -153,13 +157,13 @@ public class DbUtil {
             String columnDef = columnRs.getString("COLUMN_DEF");//默认值
             String isNullable = columnRs.getString("IS_NULLABLE");
             boolean isNullAble = BOOLEAN_YES.equalsIgnoreCase(isNullable);
-            TableColumn tableColumn = new TableColumn(columnName, dataTypeName, columnSize, isNullAble, remarks, columnDef);
+            Column tableColumn = new Column(columnName, ColumnType.toName(dataTypeName), columnSize, isNullAble, remarks, columnDef);
             columns.add(tableColumn);
         }
         columnRs.close();
 
         // 获取表字段的详细信息
-        for(TableColumn column : columns){
+        for(Column column : columns){
             getTableColumnDetail(table, column);
         }
 
@@ -172,7 +176,7 @@ public class DbUtil {
      * @param tableColumn 表的列对象
      * @throws SQLException
      */
-    private void getTableColumnDetail(Table table, TableColumn tableColumn) throws SQLException {
+    private void getTableColumnDetail(Table table, Column tableColumn) throws SQLException {
         String columnName = tableColumn.getName();
         String dataTypeName = tableColumn.getType();
         PreparedStatement ps;
@@ -232,11 +236,11 @@ public class DbUtil {
         }
     }
 
-    public List<Database> analyzeDatabase(List<String> schemas) {
-        List<Database> databases = Lists.newArrayList();
+    public Database analyzeDatabase(List<String> schemas) {
+        Database database = new Database();
 
-        for (String schema : schemas) {
-            Database database = new Database();
+        for (String schemaStr : schemas) {
+            Schema schema = new Schema();
 
             // 获取数据库版本信息
             try {
@@ -247,18 +251,61 @@ public class DbUtil {
             }
 
             // 设置数据库 schema
-            database.setSchema(schema);
-            database.setTables(listTables(schema));
+            schema.setName(schemaStr);
+            schema.setTables(listTables(schemaStr));
 
-            databases.add(database);
+            database.getSchemas().add(schema);
         }
 
-        return databases;
+        return database;
+    }
+
+    /**
+     * 获取行数最多的20张表
+     * @param schemas
+     * @return
+     */
+    public List<Table> getAllTable(List<Schema> schemas) {
+        List<Table> tables = Lists.newArrayList();
+        for (Schema schema : schemas) {
+            tables.addAll(schema.getTables());
+        }
+        return tables;
+    }
+
+    /**
+     * 分析表数据的行数
+     * 前20%多行数的表
+     * 后30%少行数的表
+     * 空表
+     * @param database
+     * @return
+     */
+    public void setDataBaseTableInfo(Database database) {
+        for (Schema schema : database.getSchemas()) {
+            List<Table> tables = schema.getTables().subList(0, schema.getTables().size());
+
+            // 无数据的表
+            List<Table> emptyRowTables = ListUtils.select(tables, table -> table.getRowCount() == 0);
+            schema.setEmptyRow(emptyRowTables);
+
+            tables.removeAll(emptyRowTables);
+
+            // 数据最多的表
+            tables.sort(Comparator.comparingInt(Table::getRowCount));
+            List<Table> maxRowTables = tables.subList(0, tables.size() > 20 ? 20 : tables.size() / 2);
+            schema.setMaxRow(maxRowTables);
+
+            // 少数据的表
+            tables.sort(Comparator.comparingInt(Table::getRowCount));
+            List<Table> minRowTable = tables.subList(0, tables.size() > 20 ? 20 : tables.size() / 2);
+            schema.setMinRow(minRowTable);
+        }
     }
 
     public static void main(String[] args) {
-        DbUtil dbUtil = new DbUtil();
-        List<Table> db = dbUtil.listTables("SC_FGWCMS", "JC_SITE_FLOW");
-        System.out.println(JSONObject.toJSON(db));
+        DbAnalyze dbUtil = new DbAnalyze();
+        Database database = dbUtil.analyzeDatabase(SysConfig.SCHEMAS);
+        System.out.println(JSONObject.toJSON(database));
     }
 }

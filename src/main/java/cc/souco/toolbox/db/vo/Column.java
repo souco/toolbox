@@ -1,6 +1,6 @@
 package cc.souco.toolbox.db.vo;
 
-public class TableColumn {
+public class Column {
     private String name;
     private String type;
     private Integer size;  //  字段大小
@@ -10,10 +10,10 @@ public class TableColumn {
     private String enumerateValue;  // 枚举值
     private String defaultValue;  // 默认值
 
-    public TableColumn() {
+    public Column() {
     }
 
-    public TableColumn(String name, String type, Integer size, Boolean nullable, String remarks, String defaultValue) {
+    public Column(String name, String type, Integer size, Boolean nullable, String remarks, String defaultValue) {
         this.name = name;
         this.type = type;
         this.size = size;

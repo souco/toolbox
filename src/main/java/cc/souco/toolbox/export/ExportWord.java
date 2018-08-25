@@ -1,12 +1,6 @@
 package cc.souco.toolbox.export;
 
-import cc.souco.toolbox.common.ListKit;
-import cc.souco.toolbox.db.DbUtil;
-import cc.souco.toolbox.db.vo.Database;
-import cc.souco.toolbox.db.vo.Table;
-import com.alibaba.fastjson.JSONObject;
-import com.beust.jcommander.internal.Lists;
-import com.beust.jcommander.internal.Maps;
+import cc.souco.toolbox.common.FileKit;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -14,10 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 public class ExportWord {
 
@@ -29,10 +19,17 @@ public class ExportWord {
         configuration.setDefaultEncoding("UTF-8");
     }
 
-    public void export(Object dataMap, String exportPath, String filename) {
+    /**
+     * 导出 Word 文档
+     * 格式为 doc 格式 (docx 格式打开文件有问题)
+     *
+     * @param template 导出的模板全路径，包含路径及文件名
+     * @param exportFilepath 导出的文件全路径，包含路径及文件名
+     * @param data 导出的数据
+     */
+    public void export(String template, String exportFilepath, Object data) {
         // 创建导出文件
-        String fullPath = exportPath + File.separator + filename + ".doc";
-        File outFile = new File(fullPath);
+        File outFile = FileKit.newFileSafety(exportFilepath);
 
         // 模板文件所在路径
         configuration.setClassForTemplateLoading(this.getClass(), "");
@@ -40,7 +37,7 @@ public class ExportWord {
 
         // 获取模板文件
         try {
-            exportTemplate = configuration.getTemplate("/databaseDetailTemplate.ftl");
+            exportTemplate = configuration.getTemplate(File.separator + template);
         } catch (IOException e) {
             logger.error("获取模板文件失败");
             throw new RuntimeException(e);
@@ -56,59 +53,11 @@ public class ExportWord {
 
         // 将填充数据填入模板文件并输出到目标文件
         try {
-            exportTemplate.process(dataMap, out);
+            exportTemplate.process(data, out);
             out.flush();
         } catch (TemplateException | IOException e) {
             e.printStackTrace();
         }
-        logger.info(fullPath);
+        logger.info("Word 文件导出成功：" + exportFilepath);
     }
-
-    public static void main(String[] args) {
-        List<String> schemas = Lists.newArrayList("SC_FGW", "SC_FGWCMS");
-        DbUtil dbUtil = new DbUtil();
-        List<Database> databases = dbUtil.analyzeDatabase(schemas);
-        Map<String, Object> map = Maps.newHashMap();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-        String date = sdf.format(new Date());
-        map.put("date", date);
-        map.put("schemas", schemas.toString());
-        map.put("version", databases.get(0).getVersion());
-        map.put("databases", databases);
-        logger.info(JSONObject.toJSON(databases).toString());
-
-        sdf = new SimpleDateFormat("yyyyMMddhhmmss");
-        String filename = "数据库文档" + sdf.format(new Date()) + "(" + ListKit.join(schemas, ",") + ")";
-        new ExportWord().export(map, "E:/ProjectData", filename);
-        logger.info(filename);
-    }
-
-    /**
-     * 摇摆检查错误数据
-     * @param db
-     */
-    public static void checkError(Database db, String filename){
-        Map<String, Object> map = Maps.newHashMap();
-        List<Table> tables = db.getTables();
-        tables = tables.subList(tables.size() - 84, tables.size()-82);
-        db.setTables(tables);
-        map.put("database", db);
-
-        do {
-            System.out.println("table size : " + tables.size());
-            System.out.println(JSONObject.toJSON(db));
-            new ExportWord().export(map, "E:/ProjectData/Gen", filename);
-
-            tables = ListKit.preHalf(tables);
-            db.setTables(tables);
-            map.put("database", db);
-        } while (tables.size() > 2);
-
-        for (Table table : tables) {
-            db.setTables(Lists.newArrayList(table));
-            System.out.println(JSONObject.toJSON(db));
-            new ExportWord().export(map, "E:/ProjectData/Gen", filename);
-        }
-    }
-
 }

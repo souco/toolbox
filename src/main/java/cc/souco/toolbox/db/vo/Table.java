@@ -9,7 +9,7 @@ public class Table {
     private String remarks;  // 表注释
     private String primaryKey;  // 主键
     private Integer rowCount;  // 行数
-    private List<TableColumn> columns;  // 表的列属性
+    private List<Column> columns;  // 表的列属性
 
     public Table() {
     }
@@ -68,11 +68,11 @@ public class Table {
         this.rowCount = rowCount;
     }
 
-    public List<TableColumn> getColumns() {
+    public List<Column> getColumns() {
         return columns;
     }
 
-    public void setColumns(List<TableColumn> columns) {
+    public void setColumns(List<Column> columns) {
         this.columns = columns;
     }
 

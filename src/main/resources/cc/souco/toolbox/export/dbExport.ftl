@@ -158,7 +158,7 @@
                                 <w:sz w:val="28"/>
                                 <w:szCs w:val="28"/>
                             </w:rPr>
-                            <w:t>${table_index + 1}.${table.schema!}.${table.name!}</w:t>
+                            <w:t>${table_index + 1}.${table.name!}.${table.name!}</w:t>
                         </w:r>
                     </w:p>
                     <w:tbl>

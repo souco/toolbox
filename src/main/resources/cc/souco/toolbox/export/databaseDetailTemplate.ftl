@@ -102,7 +102,7 @@
                             <w:rPr>
                                 <w:rFonts w:hint="eastAsia"/>
                             </w:rPr>
-                            <w:t>时间：${date!}</w:t>
+                            <w:t>时间：${dateStr!}</w:t>
                         </w:r>
                     </w:p>
                     <w:p w14:paraId="63DF586A" w14:textId="2240AEEF" w:rsidR="00C26841" w:rsidRDefault="00C26841">
@@ -110,7 +110,7 @@
                             <w:rPr>
                                 <w:rFonts w:hint="eastAsia"/>
                             </w:rPr>
-                            <w:t>数据库名称：${schemas!}</w:t>
+                            <w:t>数据库名称：${schemasStr!}</w:t>
                         </w:r>
                     </w:p>
                     <w:p w14:paraId="31029245" w14:textId="6C1359E1" w:rsidR="00C26841" w:rsidRDefault="00EC65CD">
@@ -129,7 +129,7 @@
                             </w:rPr>
                         </w:pPr>
                     </w:p>
-                    <#list databases as database>
+                    <#list schemas as schema>
                     <w:p w14:paraId="34061635" w14:textId="2CA21C03" w:rsidR="007E6BE3" w:rsidRDefault="00802C90"
                          w:rsidP="00ED0862">
                         <w:pPr>
@@ -145,10 +145,10 @@
                                 <w:sz w:val="28"/>
                                 <w:szCs w:val="28"/>
                             </w:rPr>
-                            <w:t>${database_index + 1}. ${database.schema!}</w:t>
+                            <w:t>${schema_index + 1}. ${schema.name!}</w:t>
                         </w:r>
                     </w:p>
-                    <#list database.tables as table>
+                    <#list schema.tables as table>
                     <w:p w14:paraId="6219751B" w14:textId="05AE7ABB" w:rsidR="001C1224" w:rsidRPr="00A43F79"
                          w:rsidRDefault="001C1224" w:rsidP="007B3E87">
                         <w:pPr>
@@ -163,7 +163,7 @@
                                 <w:rFonts w:hint="eastAsia"/>
                                 <w:sz w:val="24"/>
                             </w:rPr>
-                            <w:t>${database_index + 1}.${table_index + 1}. ${table.name!}</w:t>
+                            <w:t>${schema_index + 1}.${table_index + 1}. ${table.name!}</w:t>
                         </w:r>
                     </w:p>
                     <w:tbl>
