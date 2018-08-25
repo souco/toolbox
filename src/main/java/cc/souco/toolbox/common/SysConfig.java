@@ -17,6 +17,8 @@ public interface SysConfig {
     String BASE_PATH = "D:" + File.separator + "ProjectData" + File.separator;
 
     // DB 导出相关
-    String DATABASE_TEMPLATE_BASIC = "databaseDetailTemplate.ftl";
+    String DATABASE_TEMPLATE_BASIC = "databaseTemplateBasic.ftl";
+    String DATABASE_TEMPLATE_SIMPLE = "databaseTemplateSimpleSingle.ftl";
+    String DATABASE_TEMPLATE_TABLE_INFO = "databaseTemplateTableInfo.ftl";
 
 }

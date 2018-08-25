@@ -39,7 +39,7 @@ public class DbMain {
         String dataStr = JSONObject.toJSON(database).toString();
         FileKit.toFile(txtFilepath, dataStr);
         logger.info(dataStr);
-        new ExportWord().export(SysConfig.DATABASE_TEMPLATE_BASIC, wordFilepath, database);
+        new ExportWord().export(SysConfig.DATABASE_TEMPLATE_TABLE_INFO, wordFilepath, database);
     }
 
     /**

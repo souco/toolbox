@@ -40,6 +40,11 @@ public enum ColumnType {
         return name;
     }
 
+    @Override
+    public String toString() {
+        return this.fullName;
+    }
+
     // 构造方法
     ColumnType(String fullName){
         this.fullName = fullName;

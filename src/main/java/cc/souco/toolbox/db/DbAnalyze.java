@@ -12,13 +12,12 @@ import com.beust.jcommander.internal.Lists;
 import com.beust.jcommander.internal.Maps;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DbAnalyze {
     private final static Logger logger = LoggerFactory.getLogger(DbAnalyze.class);
@@ -27,8 +26,8 @@ public class DbAnalyze {
     private static final int TABLE_ENUM_TABLE_ROW_COUNT = 30;
     private static final int COLUMN_ENUM_TABLE_ROW_COUNT = 20;
     private static final int ENUMERATE_VALUE_LENGTH = 200;
-    private static final boolean IS_TABLE_COUNT = true;
-    private static final int TABLE_COUNT = 5;
+    private static final boolean IS_TABLE_COUNT = false;
+    private static final int TABLE_COUNT = 15;
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
 
@@ -153,6 +152,13 @@ public class DbAnalyze {
             String columnName = columnRs.getString("COLUMN_NAME");//列名
             String dataTypeName = columnRs.getString("TYPE_NAME");//java.sql.Types类型   名称
             int columnSize = columnRs.getInt("COLUMN_SIZE");//列大小
+            if (StringUtils.isNotBlank(dataTypeName) && dataTypeName.startsWith(ColumnType.TS.toString())) {
+                if (dataTypeName.contains("(") && dataTypeName.contains(")")) {
+                    String size = dataTypeName.substring(dataTypeName.indexOf("(") + 1, dataTypeName.indexOf(")"));
+                    columnSize = NumberUtils.toInt(size, columnSize);
+                }
+                dataTypeName = ColumnType.TS.name();
+            }
             String remarks = columnRs.getString("REMARKS");//列描述
             String columnDef = columnRs.getString("COLUMN_DEF");//默认值
             String isNullable = columnRs.getString("IS_NULLABLE");
@@ -257,6 +263,8 @@ public class DbAnalyze {
             database.getSchemas().add(schema);
         }
 
+        setDataBaseTableInfo(database);
+
         return database;
     }
 
@@ -283,29 +291,35 @@ public class DbAnalyze {
      */
     public void setDataBaseTableInfo(Database database) {
         for (Schema schema : database.getSchemas()) {
-            List<Table> tables = schema.getTables().subList(0, schema.getTables().size());
+            List<Table> tables = Lists.newArrayList(schema.getTables());
+
+            tables.sort(Comparator.comparingInt(Table::getRowCount).reversed());
+            schema.setOrderRowTables(tables);
 
             // 无数据的表
+            tables = Lists.newArrayList(schema.getTables());
             List<Table> emptyRowTables = ListUtils.select(tables, table -> table.getRowCount() == 0);
-            schema.setEmptyRow(emptyRowTables);
+            schema.setEmptyRowTables(emptyRowTables);
 
-            tables.removeAll(emptyRowTables);
 
             // 数据最多的表
+            tables = Lists.newArrayList(schema.getTables());
+            tables = ListUtils.select(tables, table -> table.getRowCount() != 0);
             tables.sort(Comparator.comparingInt(Table::getRowCount));
             List<Table> maxRowTables = tables.subList(0, tables.size() > 20 ? 20 : tables.size() / 2);
-            schema.setMaxRow(maxRowTables);
+            schema.setMaxRowTables(maxRowTables);
 
             // 少数据的表
+            tables = Lists.newArrayList(schema.getTables());
             tables.sort(Comparator.comparingInt(Table::getRowCount));
             List<Table> minRowTable = tables.subList(0, tables.size() > 20 ? 20 : tables.size() / 2);
-            schema.setMinRow(minRowTable);
+            schema.setMinRowTables(minRowTable);
         }
     }
 
     public static void main(String[] args) {
         DbAnalyze dbUtil = new DbAnalyze();
-        Database database = dbUtil.analyzeDatabase(SysConfig.SCHEMAS);
-        System.out.println(JSONObject.toJSON(database));
+        List<Table> tables = dbUtil.listTables(SysConfig.SCHEMAS.get(0), "CTL_AGENCY_EXTRA_INFO");
+        System.out.println(JSONObject.toJSON(tables));
     }
 }

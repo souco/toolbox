@@ -7,14 +7,17 @@ public class Schema {
     private String name;
     private List<Table> tables;
 
-    // 行数最多
-    private List<Table> maxRow;
+    // 行数有序表
+    private List<Table> orderRowTables;
 
     // 行数最多
-    private List<Table> emptyRow;
+    private List<Table> maxRowTables;
+
+    // 行数最多
+    private List<Table> emptyRowTables;
 
     // 行数最少
-    private List<Table> minRow;
+    private List<Table> minRowTables;
 
     public String getName() {
         return name;
@@ -32,27 +35,35 @@ public class Schema {
         this.tables = tables;
     }
 
-    public List<Table> getMaxRow() {
-        return maxRow;
+    public List<Table> getOrderRowTables() {
+        return orderRowTables;
     }
 
-    public void setMaxRow(List<Table> maxRow) {
-        this.maxRow = maxRow;
+    public void setOrderRowTables(List<Table> orderRowTables) {
+        this.orderRowTables = orderRowTables;
     }
 
-    public List<Table> getEmptyRow() {
-        return emptyRow;
+    public List<Table> getMaxRowTables() {
+        return maxRowTables;
     }
 
-    public void setEmptyRow(List<Table> emptyRow) {
-        this.emptyRow = emptyRow;
+    public void setMaxRowTables(List<Table> maxRowTables) {
+        this.maxRowTables = maxRowTables;
     }
 
-    public List<Table> getMinRow() {
-        return minRow;
+    public List<Table> getEmptyRowTables() {
+        return emptyRowTables;
     }
 
-    public void setMinRow(List<Table> minRow) {
-        this.minRow = minRow;
+    public void setEmptyRowTables(List<Table> emptyRowTables) {
+        this.emptyRowTables = emptyRowTables;
+    }
+
+    public List<Table> getMinRowTables() {
+        return minRowTables;
+    }
+
+    public void setMinRowTables(List<Table> minRowTables) {
+        this.minRowTables = minRowTables;
     }
 }
