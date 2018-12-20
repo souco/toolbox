@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>test page</title>
+    <link type="text/css" rel="stylesheet" href="/css/db.css"/>
+    <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="/js/vue/vue.js"></script>
+    <script>
+        var app22;
+        var schemaList = ['1', '2', '3'];
+        $(function () {
+            app22 = new Vue({
+                el: "#app",
+                data: {
+                    message: 'hello, souco ,this is vue!222' + new Date().toLocaleString(),
+                    showMessage: true,
+                    schemas: schemaList
+                }
+            });
+        })
+    </script>
+</head>
+<body>
+<div id="app">
+    <span v-if="showMessage" v-bind:title="message">
+        {{message}}
+    </span>
+    <ul>
+        <li v-for="(schemaStr, index) in schemas">
+            {{schemaStr}} - {{index + 1}}
+        </li>
+    </ul>
+</div>
+</body>
+</html>
