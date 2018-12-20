@@ -26,31 +26,30 @@ public class DbMain {
 
     public static void main(String[] args) {
         DbAnalyze dbUtil = new DbAnalyze();
-        Database database = dbUtil.analyzeDatabase(SysConfig.SCHEMAS);
+        Database database = dbUtil.analyzeDatabase(SysConfig.SCHEMAS.subList(0, 1), SysConfig.EXCLUDES);
 
         // 从txt文件读取
-        // database = getDataFromFile();
+        // Database database = getDataFromFile("D:\\aa\\bb.txt");
 
-        database.setDate(new Date());
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmm");
         String filename = "数据库文档" + sdf.format(new Date()) + "(" + ListKit.join(SysConfig.SCHEMAS, ",") + ")";
         String txtFilepath = SysConfig.BASE_PATH + filename + ".txt";
         String wordFilepath = SysConfig.BASE_PATH + filename + ".doc";
         String dataStr = JSONObject.toJSON(database).toString();
         FileKit.toFile(txtFilepath, dataStr);
         logger.info(dataStr);
-        new ExportWord().export(SysConfig.DATABASE_TEMPLATE_TABLE_INFO, wordFilepath, database);
+        new ExportWord().export(SysConfig.DATABASE_TEMPLATE_BASIC_SINGLE, wordFilepath, database);
     }
 
     /**
      * 从文本文件获取数据库信息
      * 用于有时导出失败，但是读取的数据库信息已json的形式保存到了文本文件，此时可直接从文本文件读取。
-     * @param filepath
-     * @return
+     * @param filepath 文件全路径
+     * @return Database 对象
      */
     public static Database getDataFromFile(String filepath){
         String databaseStr = FileKit.toString(filepath);
-        Database database = (Database)JSONObject.parse(databaseStr);
+        Database database = JSONObject.parseObject(databaseStr, Database.class);
         List<Schema> schemas = database.getSchemas();
         for (Schema schema : schemas) {
             List<Table> tables = schema.getTables();

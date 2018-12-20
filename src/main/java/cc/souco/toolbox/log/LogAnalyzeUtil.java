@@ -9,25 +9,16 @@ import org.springframework.util.StringUtils;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class LogAnalyzeUtil {
-    private static final String LOG_FILE_PATH = "D:\\Logs\\xj";
+    private static final String LOG_FILE_PATH = "D:\\ProjectData\\logs";
     private static final List<String> analyse = Lists.newArrayList("ip", "contentType", "url", "httpMethod", "userAgent");
     private static UserAgentAnalyzer uaa = null;
 
     public static void main(String[] args) {
-        List<String> fileNames = Lists.newArrayList("wt.log_2018-07-17.log");
-        fileNames.add("wt.log_2018-07-17.log");
-        fileNames.add("wt.log_2018-07-18.log");
-        fileNames.add("wt.log_2018-07-19.log");
-        fileNames.add("wt.log_2018-07-20.log");
-        fileNames.add("wt.log_2018-07-21.log");
-        fileNames.add("wt.log_2018-07-22.log");
-        fileNames.add("wt.log_2018-07-23.log");
-        fileNames.add("wt.log_2018-07-24.log");
-        fileNames.add("wt.log_2018-07-25.log");
-        fileNames.add("wt.log_2018-07-26.log");
+        List<String> fileNames = Lists.newArrayList("host.access.log");
 
         Map<String, Map<String, Integer>> analyzeResult = Maps.newHashMap();
 
@@ -45,9 +36,6 @@ public class LogAnalyzeUtil {
 
         Set<Map.Entry<String, Map<String, Integer>>> mapEntries = analyzeResult.entrySet();
         for (Map.Entry<String, Map<String, Integer>> analyzeMap : mapEntries) {
-            System.out.println();
-            System.out.println(analyzeMap.getKey());
-            System.out.println(String.join("", Collections.nCopies(120, "-")));
             Map<String, Integer> analysis = analyzeMap.getValue();
             ArrayList<Map.Entry<String, Integer>> analysisList = new ArrayList<>(analysis.entrySet());
             analysisList.sort((o1, o2) -> o2.getValue() - o1.getValue());
@@ -56,6 +44,9 @@ public class LogAnalyzeUtil {
                 sum +=  analyze.getValue();
             }
 
+            System.out.println();
+            System.out.println(analyzeMap.getKey() + "\t数据量[" + sum + "]");
+            System.out.println(String.join("", Collections.nCopies(120, "-")));
             int count = 0;
             for (Map.Entry<String, Integer> analyze : analysisList) {
                 if (++count > 20) {
@@ -80,12 +71,24 @@ public class LogAnalyzeUtil {
             result = Maps.newHashMap();
         }
 
+        FileInputStream fileInputStream = null;
+        BufferedInputStream bufferedInputStream = null;
+        InputStreamReader inputStreamReader = null;
+        BufferedReader reader = null;
+
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream(new File(filePath)), "UTF-8"));
+            int bufferSize = 20 * 1024 * 1024;//设读取文件的缓存为20MB
+
+            //建立缓冲文本输入流
+            fileInputStream = new FileInputStream(filePath);
+            bufferedInputStream = new BufferedInputStream(fileInputStream);
+            inputStreamReader = new InputStreamReader(bufferedInputStream, StandardCharsets.UTF_8);
+            reader = new BufferedReader(inputStreamReader, bufferSize);
+
             String line;
+            long lineCount = 0;
             while ((line = reader.readLine()) != null) {
-                if (!StringUtils.isEmpty(line) && line.contains("  INFO ")) {
+                if (!StringUtils.isEmpty(line) && line.contains("--")) {
                     for (String analyzeKey : analysis) {
                         int matcherStart = line.indexOf(analyzeKey + "[");
                         int matcherEnd = line.indexOf("]", matcherStart);
@@ -98,11 +101,45 @@ public class LogAnalyzeUtil {
                         }
                     }
                 }
+
+                ++lineCount;
+                if (lineCount % 1000 == 0) {
+                    System.out.println("lineCount:" + lineCount);
+                }
             }
             return result;
 
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (bufferedInputStream != null) {
+                try {
+                    bufferedInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (inputStreamReader != null) {
+                try {
+                    inputStreamReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         return Maps.newHashMap();

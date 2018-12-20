@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-bind="http://www.w3.org/1999/xhtml"
+      xmlns:v-model="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>模式</title>
+    <link type="text/css" rel="stylesheet" href="/css/db.css"/>
+    <link type="text/css" rel="stylesheet" href="/third-party/bootstrap/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/third-party/font-awesome/css/font-awesome.min.css">
+    <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="/third-party/vue/vue.js"></script>
+    <script type="text/javascript" src="/third-party/layer/layer.js"></script>
+    <script>
+
+        var vueApp;
+        $(function () {
+            vueApp = new Vue({
+                el: "#appDiv",
+                data: {
+                    message: 'hello, souco ,this is vue!',
+                    hasSchemas: false,
+                    schemasShow: [],
+                    schemasSelect: [],
+                    schemas: [],
+                    searchText: ""
+                },
+                methods: {
+                    selectSchema: function (index) {
+                        var element = this.schemasShow.splice(index, 1);
+                        this.schemasSelect.push(element[0]);
+                        this.schemasSelect.sort();
+                        this.filterSchemas();
+                    },
+                    removeSchema: function(index){
+                        this.schemasSelect.splice(index, 1);
+                        this.filterSchemas();
+                    },
+                    filterSchemas: function(){
+                        var result = [];
+                        if ((null === this.searchText || '' === this.searchText) && this.schemasSelect.length === 0) {
+                            result = this.schemas.slice();
+                        } else {
+                            for(var i= 0; i < this.schemas.length; i++){
+                                var value = this.schemas[i].toUpperCase();
+
+                                // 排除掉已选择的
+                                var hasSelect = false;
+                                for (var index in this.schemasSelect) {
+                                    if (value === this.schemasSelect[index].toUpperCase()) {
+                                        hasSelect = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!hasSelect && value.indexOf(this.searchText.toUpperCase()) > -1) {
+                                    result.push(this.schemas[i]);
+                                }
+                            }
+                        }
+                        result.sort();
+                        this.schemasShow = result;
+                    },
+                    dbNext: function(){
+                        if (this.schemasSelect.length <= 0) {
+                            layer.alert("请选择要导出的模式！");
+                            return;
+                        }
+
+                        $.ajax({
+                            type: "POST",
+                            data: {schemas: this.schemasSelect},
+                            url: "/api/db/schemas/select",
+                            success: function (result, textStatus, jqXHR) {
+                                console.log(result);
+                                if (result.success) {
+                                    window.location.href = "/tables";
+                                } else {
+                                    layer.alert(result.msg);
+                                }
+                            },
+                            error: function (jqXHR, textStatus, errorThrown) {
+                                console.error(jqXHR);
+                                console.error(textStatus);
+                                console.error(errorThrown);
+                                alert('获取数据库信息失败，错误信息： ' + textStatus);
+                            }
+                        });
+                    }
+                }
+            });
+
+            $.ajax({
+                type: "GET",
+                url: "/api/db/schemas",
+                success: function (result, textStatus, jqXHR) {
+                    vueApp.schemas = result;
+                    vueApp.schemas.sort();
+                    vueApp.hasSchemas = result > 0;
+                    vueApp.filterSchemas();
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error(jqXHR);
+                    console.error(textStatus);
+                    console.error(errorThrown);
+                    alert('获取数据库信息失败，错误信息： ' + textStatus);
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="text-center db-title">
+    <span>数据库工具</span>
+</div>
+<div id="appDiv" class="content-center col-center-block">
+    <div class="text-center db-step">
+        <h2 class="h2">选择数据库模式</h2>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="input-group schema-search-div">
+                    <input v-model:value="searchText" class="input-group form-control" placeholder="模式名过滤" @keyup.enter="filterSchemas">
+                    <button class="input-group-append btn btn-primary" @click="filterSchemas">搜索</button>
+                </div>
+                <table class="table table-light">
+                    <thead>
+                    <tr class="text-center">
+                        <th style="width: 100px" class="text-center">序号</th>
+                        <th class="text-center">模式名</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-if="schemasShow.length > 0" v-for="(schemaStr, index) in schemasShow" class="text-center">
+                        <td class="align-middle">{{index + 1}}/{{schemasShow.length}}</td>
+                        <td class="align-middle">{{schemaStr}}</td>
+                        <td><span class="btn btn-outline-success" v-on:click="selectSchema(index)">
+                            <i class="fa fa-chevron-right" aria-hidden="true"></i></i> 选择</span></td>
+                    </tr>
+                    <tr v-if="schemasShow.length <= 0">
+                        <td colspan="3" class="text-center">
+                            <span v-if="searchText==''">正在努力的加载数据...</span>
+                            <span v-if="searchText!=''"><label>{{searchText}}</label> 无匹配数据.</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col">
+                <div class="input-group schema-search-div">
+                    <button class="btn btn-dark form-control disabled" v-if="schemasSelect.length <= 0">
+                        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                        下一步
+                    </button>
+                    <button class="btn btn-success form-control" v-if="schemasSelect.length > 0" @click="dbNext">
+                        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                        下一步
+                    </button>
+                </div>
+                <table class="table table-light">
+                    <thead>
+                    <tr class="text-center">
+                        <th style="width: 100px" class="text-center">序号</th>
+                        <th class="text-center">模式名</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-if="schemasSelect.length > 0" v-for="(schemaStr, index) in schemasSelect" class="text-center">
+                        <td class="align-middle">{{index + 1}}/{{schemasSelect.length}}</td>
+                        <td class="align-middle">{{schemaStr}}</td>
+                        <td><span class="btn btn-outline-danger" v-on:click="removeSchema(index)">
+                            <i class="fa fa-chevron-left" aria-hidden="true"></i></i> 取消</span></td>
+                    </tr>
+                    <tr v-if="schemasSelect.length <= 0">
+                        <td colspan="3" class="text-center">
+                            <span>请选择需要导出的数据库模式...</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

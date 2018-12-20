@@ -1,11 +1,15 @@
 package cc.souco.toolbox.db.vo;
 
+import com.beust.jcommander.internal.Lists;
+
 import java.util.List;
 
 public class Schema {
 
     private String name;
     private List<Table> tables;
+        private List<String> excluded;
+    private List<String> synonyms;
 
     // 行数有序表
     private List<Table> orderRowTables;
@@ -33,6 +37,28 @@ public class Schema {
 
     public void setTables(List<Table> tables) {
         this.tables = tables;
+    }
+
+    public List<String> getExcluded() {
+        if (excluded == null) {
+            excluded = Lists.newArrayList();
+        }
+        return excluded;
+    }
+
+    public void setExcluded(List<String> excluded) {
+        this.excluded = excluded;
+    }
+
+    public List<String> getSynonyms() {
+        if (synonyms == null) {
+            synonyms = Lists.newArrayList();
+        }
+        return synonyms;
+    }
+
+    public void setSynonyms(List<String> synonyms) {
+        this.synonyms = synonyms;
     }
 
     public List<Table> getOrderRowTables() {

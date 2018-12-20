@@ -1,6 +1,5 @@
 package cc.souco.toolbox.db.vo;
 
-import com.beust.jcommander.internal.Lists;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import java.util.ArrayList;

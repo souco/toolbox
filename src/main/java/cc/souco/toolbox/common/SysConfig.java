@@ -18,7 +18,9 @@ public interface SysConfig {
 
     // DB 导出相关
     String DATABASE_TEMPLATE_BASIC = "databaseTemplateBasic.ftl";
+    String DATABASE_TEMPLATE_BASIC_SINGLE = "databaseTemplateBasicSingle.ftl";
     String DATABASE_TEMPLATE_SIMPLE = "databaseTemplateSimpleSingle.ftl";
     String DATABASE_TEMPLATE_TABLE_INFO = "databaseTemplateTableInfo.ftl";
 
+    List<String> EXCLUDES = Lists.newArrayList("aa", "bb", "cc");
 }

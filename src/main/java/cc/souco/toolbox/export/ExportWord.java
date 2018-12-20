@@ -55,6 +55,7 @@ public class ExportWord {
         try {
             exportTemplate.process(data, out);
             out.flush();
+            out.close();
         } catch (TemplateException | IOException e) {
             e.printStackTrace();
         }

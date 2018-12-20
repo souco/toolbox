@@ -2,6 +2,7 @@ package cc.souco.toolbox.db;
 
 import cc.souco.toolbox.common.SysConfig;
 import cc.souco.toolbox.common.StringKit;
+import cc.souco.toolbox.db.dao.DbDao;
 import cc.souco.toolbox.db.vo.Database;
 import cc.souco.toolbox.db.vo.Schema;
 import cc.souco.toolbox.db.vo.Table;
@@ -15,10 +16,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.sql.*;
 import java.util.*;
 
+// @Service
 public class DbAnalyze {
     private final static Logger logger = LoggerFactory.getLogger(DbAnalyze.class);
     private static final String BOOLEAN_YES = "yes";
@@ -26,10 +30,14 @@ public class DbAnalyze {
     private static final int TABLE_ENUM_TABLE_ROW_COUNT = 30;
     private static final int COLUMN_ENUM_TABLE_ROW_COUNT = 20;
     private static final int ENUMERATE_VALUE_LENGTH = 200;
-    private static final boolean IS_TABLE_COUNT = false;
+    private static final boolean IS_TABLE_COUNT = true;
     private static final int TABLE_COUNT = 15;
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
+
+
+    // @Autowired
+    private DbDao dbDao;
 
 
     public DbAnalyze() {
@@ -50,11 +58,16 @@ public class DbAnalyze {
         }
     }
 
-    public List<Table> listTables(String schemaName) {
-        return listTables(schemaName, "%%");
+    public List<Table> listTables(String schemaName, String tablePattern) {
+        return listTables(schemaName, tablePattern, Lists.newArrayList(), Lists.newArrayList());
     }
 
-    public List<Table> listTables(String schemaName, String tablePattern) {
+
+    public List<Table> listTables(String schemaName, List<String> excludes, List<String> excluded) {
+        return listTables(schemaName, "%%", excludes , excluded);
+    }
+
+    public List<Table> listTables(String schemaName, String tablePattern, List<String> excludes, List<String> excluded) {
         List<Table> tables = Lists.newArrayList();
         try {
             int count = 0;
@@ -64,6 +77,13 @@ public class DbAnalyze {
 
                 // 排除系统表
                 if (tableName.contains("BIN$") || tableName.contains("SESSION")) {
+                    continue;
+                }
+
+                // 记录实际排除的表
+                // logger.info("excludes contains " + tableName + "? " + excludes.contains(tableName));
+                if (excludes != null && excludes.contains(tableName)) {
+                    excluded.add(tableName);
                     continue;
                 }
 
@@ -201,7 +221,7 @@ public class DbAnalyze {
         ps.close();
 
         // 是否可枚举
-        if (null != table.getRowCount() && table.getRowCount() > TABLE_ENUM_TABLE_ROW_COUNT && ("VARCHAR2".equals(dataTypeName) || "NUMBER".equals(dataTypeName))) {
+        if (null != table.getRowCount() && table.getRowCount() > 0 && isEnumColumnType(dataTypeName)) {
             // 行数
             String enumRowCountSql = "select count(distinct " + columnName.toUpperCase() + ") DATA_ROW_COUNT from \"" + table.getSchema() + "\".\"" + table.getName() + "\"";
             ps = con.prepareStatement(enumRowCountSql);
@@ -242,7 +262,35 @@ public class DbAnalyze {
         }
     }
 
-    public Database analyzeDatabase(List<String> schemas) {
+    /**
+     * 是否枚举类型的表字段类型
+     * 目前仅对数字和字符类型的字段做枚举值读取。主要判断 number,varchar 及其衍生类型
+     * @param dataTypeName 类型名称
+     * @return boolean 是/否
+     */
+    private boolean isEnumColumnType(String dataTypeName){
+        ColumnType columnType;
+        try {
+            columnType = ColumnType.valueOf(dataTypeName);
+        } catch (IllegalArgumentException e) {
+            // 不在枚举类型范围内，不统计枚举值信息
+            return false;
+        }
+
+        switch (columnType){
+            case N: return true;
+            case INT: return true;
+            case VC: return true;
+            case VC2: return true;
+            case NVC: return true;
+            case NVC2: return true;
+            case LVC: return true;
+            case LNVC: return true;
+            default: return false;
+        }
+    }
+
+    public Database analyzeDatabase(List<String> schemas, List<String> excludes) {
         Database database = new Database();
 
         for (String schemaStr : schemas) {
@@ -258,7 +306,11 @@ public class DbAnalyze {
 
             // 设置数据库 schema
             schema.setName(schemaStr);
-            schema.setTables(listTables(schemaStr));
+            List<String> excluded = schema.getExcluded();
+            schema.setTables(listTables(schemaStr, excludes, excluded));
+
+            List<String> synonyms = dbDao.findSynonyms(schemaStr);
+            schema.setSynonyms(synonyms);
 
             database.getSchemas().add(schema);
         }
@@ -319,7 +371,7 @@ public class DbAnalyze {
 
     public static void main(String[] args) {
         DbAnalyze dbUtil = new DbAnalyze();
-        List<Table> tables = dbUtil.listTables(SysConfig.SCHEMAS.get(0), "CTL_AGENCY_EXTRA_INFO");
+        List<Table> tables = dbUtil.listTables(SysConfig.SCHEMAS.get(0), "T_SHARE_FILETYPE");
         System.out.println(JSONObject.toJSON(tables));
     }
 }
