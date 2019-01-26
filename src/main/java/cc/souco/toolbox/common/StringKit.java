@@ -20,6 +20,8 @@ public class StringKit {
                     || label ==  '>'
                     || label ==  '&'
                     || label == '/'
+                    || label == '\r'
+                    || label == '\t'
                     // || label == '\u0001'
                     // || label == '\u0002'
                     || label == '\f' ) {
