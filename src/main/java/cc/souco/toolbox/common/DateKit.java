@@ -1,19 +1,19 @@
 package cc.souco.toolbox.common;
 
-import java.util.Calendar;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class DateKit {
+
+    private static final String DATE_TO_MILLI_FORMAT = "yyyyMMddHHmmss";
 
     public static String dateToMilliStr() {
         return dateToMilliStr(null);
     }
 
     public static String dateToMilliStr(Date date){
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date == null ? new Date() : date);
-        return "" + calendar.get(Calendar.YEAR) + calendar.get(Calendar.MONTH) + calendar.get(Calendar.DAY_OF_MONTH) + calendar.get(Calendar.HOUR_OF_DAY)
-                + calendar.get(Calendar.MINUTE) + calendar.get(Calendar.SECOND) + calendar.get(Calendar.MILLISECOND);
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_TO_MILLI_FORMAT);
+        return sdf.format(date == null ? new Date() : date);
     }
 
 	public static void main(String[] args) {
