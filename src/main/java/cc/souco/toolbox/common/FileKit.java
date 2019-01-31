@@ -27,7 +27,7 @@ public class FileKit {
             br = new BufferedReader(reader);
             String data;
             while ((data = br.readLine()) != null) {
-                sb.append(data);
+                sb.append(data).append("\r\n");
             }
         } catch (IOException e) {
             e.printStackTrace();
