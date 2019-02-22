@@ -1,0 +1,3 @@
+Vue.component('header', {
+    // ... 选项 ...
+});

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml"
+      xmlns:v-model="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml"
+      xmlns:v-bind="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="/css/index.css"/>
+    <link type="text/css" rel="stylesheet" href="/third-party/bootstrap/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/third-party/font-awesome/css/font-awesome.min.css">
+    <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="/third-party/vue/vue.js"></script>
+    <script type="text/javascript" src="/third-party/layer/layer.js"></script>
+    <title>项目文件提取</title>
+</head>
+<body>
+<header th:include="common/header :: header"></header>
+<div id="appDiv" class="content-center col-center-block">
+    <div class="text-center content-header">
+        <h2 class="h2">项目文件打包</h2>
+        <span class="btn btn-outline-success" v-on:click="configUser(user)">{{user.name}}</span>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="input-group schema-search-div">
+                    <select v-model:value="projectSelect" class="input-group form-control">
+                        <option v-for="project in projects" v-bind:value="project.location">
+                            {{ project.name }} ({{ project.location }})
+                        </option>
+                    </select>
+                    <button class="input-group-append btn btn-primary" @click="configProject">配置</button>
+                </div>
+                <div class="input-group schema-search-div">
+                    <select v-model:value="projectSelect" class="input-group form-control">
+                        <option v-for="project in projects" v-bind:value="project.location">
+                            {{ project.name }} ({{ project.location }})
+                        </option>
+                    </select>
+                    <button class="input-group-append btn btn-primary" @click="configProject">配置</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <table class="table table-light">
+                    <thead>
+                    <tr class="text-center">
+                        <th style="width: 100px" class="text-center">版本号</th>
+                        <th class="text-center">提交时间</th>
+                        <th class="text-center">提交人</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-if="schemasShow.length > 0" v-for="(schemaStr, index) in schemasShow" class="text-center">
+                        <td class="align-middle">{{index + 1}}/{{schemasShow.length}}</td>
+                        <td class="align-middle">{{schemaStr}}</td>
+                        <td><span class="btn btn-outline-success">
+                            <i class="fa fa-chevron-right" aria-hidden="true"></i></i> 选择</span></td>
+                    </tr>
+                    <tr v-if="schemasShow.length <= 0">
+                        <td colspan="3" class="text-center">
+                            <span v-if="searchText==''">正在努力的加载数据...</span>
+                            <span v-if="searchText!=''"><label>{{searchText}}</label> 无匹配数据.</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col">
+                <!--<div class="input-group schema-search-div">
+                    <button class="btn btn-dark form-control disabled" v-if="schemasSelect.length <= 0">
+                        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                        下一步
+                    </button>
+                    <button class="btn btn-success form-control" v-if="schemasSelect.length > 0" @click="dbNext">
+                        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
+                        下一步
+                    </button>
+                </div>
+                <table class="table table-light">
+                    <thead>
+                    <tr class="text-center">
+                        <th style="width: 100px" class="text-center">序号</th>
+                        <th class="text-center">模式名</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-if="schemasSelect.length > 0" v-for="(schemaStr, index) in schemasSelect" class="text-center">
+                        <td class="align-middle">{{index + 1}}/{{schemasSelect.length}}</td>
+                        <td class="align-middle">{{schemaStr}}</td>
+                        <td><span class="btn btn-outline-danger" v-on:click="removeSchema(index)">
+                            <i class="fa fa-chevron-left" aria-hidden="true"></i></i> 取消</span></td>
+                    </tr>
+                    <tr v-if="schemasSelect.length <= 0">
+                        <td colspan="3" class="text-center">
+                            <span>请选择需要导出的数据库模式...</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>-->
+            </div>
+        </div>
+    </div>
+</div>
+<div id="svnAccount" style="display: none;">
+    <div class="container" style="padding: 20px;">
+        <form class="form-horizontal" role="form">
+            <div class="form-group row">
+                <div class="col-sm-3 m-auto">
+                    <span for="name" class="control-label">用户名</span>
+                </div>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="name" v-model="user.name" placeholder="请输入用户名">
+                </div>
+            </div>
+            <div class="form-group row">
+                <span for="password" class="col-sm-3 control-label m-auto">密码</span>
+                <div class="col-sm-9">
+                    <input type="password" class="form-control" id="password" v-model="user.password"
+                           placeholder="请输入密码">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    var vueApp;
+    $(function () {
+        vueApp = new Vue({
+            el: "#appDiv",
+            data: {
+                message: 'hello, souco ,this is vue!',
+                hasSchemas: false,
+                schemasShow: [],
+                schemasSelect: [],
+                schemas: [],
+                searchText: '',
+                user: {
+                    name: 'souco',
+                    password: ''
+                },
+                projectSelect: 'F:/happy/project',
+                projects: [
+                    {
+                        location: 'D:/code/sc_sp',
+                        name: '四川审批'
+                    }, {
+                        location: 'F:/happy/project',
+                        name: '开心项目'
+                    }
+                ]
+
+            },
+            methods: {
+                configUser: function (user) {
+                    configUserVue.$data.user = user;
+                    layer.open({
+                        type: 1,
+                        title: "更新",
+                        area: ["400px", "220px"],
+                        content: $("#svnAccount"),
+                        btn: ["测试", "保存"],
+                        test: function () {
+                            this.testConfig();
+                            return false;
+                        },
+                        yes: function (index) {
+                            console.log("confirm ...");
+                            layer.close(index);
+                        },
+                        cancel: function () { //点击关闭按钮
+                            console.log("close ...");
+                        }
+                    });
+                },
+                configProject: function (index) {
+                    openDialog();
+                },
+                testConfig: function() {
+                    console.log("test ...");
+                }
+            }
+        });
+    });
+
+    var configUserVue = new Vue({
+        el: "#svnAccount",
+        data: {
+            user: {}
+        }
+    });
+
+    function openDialog() {
+        layer.open({
+            type: 1,
+            skin: 'layui-layer-rim', //加上边框
+            area: ['420px', '240px'], //宽高
+            content: 'html内容'
+        });
+    }
+</script>
+</body>
+</html>

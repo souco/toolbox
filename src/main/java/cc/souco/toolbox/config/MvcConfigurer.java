@@ -9,7 +9,6 @@ public class MvcConfigurer implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addRedirectViewController("/", "schemas");
         registry.addViewController("/schemas").setViewName("db/schemas");
         registry.addViewController("/tables").setViewName("db/tables");
     }
