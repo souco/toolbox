@@ -27,7 +27,7 @@ public class FileKit {
             br = new BufferedReader(reader);
             String data;
             while ((data = br.readLine()) != null) {
-                sb.append(data);
+                sb.append(data).append("\r\n");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -140,7 +140,34 @@ public class FileKit {
         return file;
     }
 
-	public static void main(String[] args) {
+    /**
+     * 打开资源管理器到指定目录
+     * @param folder : directory
+     */
+    public static void openDirectory(String folder) {
+        File file = new File(folder);
+        if (!file.exists()) {
+            return;
+        }
+        Runtime runtime = null;
+        try {
+            runtime = Runtime.getRuntime();
+            String osName = System.getProperties().getProperty("os.name");
+            if (osName.startsWith("Windows")) {
+                runtime.exec("cmd /c start explorer " + folder);
+            } else {
+                runtime.exec("nautilus " + folder);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } finally {
+            if (null != runtime) {
+                runtime.runFinalization();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
         String basePath = "D:\\xx\\xx\\xx\\xx\\";
         File inFile = newFileSafety(basePath + "xx.sql");
         File outFile = newFileSafety(basePath + "xx.sql");

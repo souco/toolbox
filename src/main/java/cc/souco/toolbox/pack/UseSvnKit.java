@@ -1,6 +1,7 @@
 package cc.souco.toolbox.pack;
 
 import cc.souco.toolbox.common.DateKit;
+import cc.souco.toolbox.common.FileKit;
 import cc.souco.toolbox.pack.service.SvnService;
 import com.beust.jcommander.internal.Lists;
 import com.beust.jcommander.internal.Sets;
@@ -59,13 +60,13 @@ public class UseSvnKit {
 
     public static void main(String[] args) {
 
-        /*try {
+        try {
             testSvnClient1();
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
 
-        SvnService svnService = new SvnService();
+        /*SvnService svnService = new SvnService();
         // svnService.findSvnLog(null, -1L, 10);
 
         Set<Long> revisions = Sets.newHashSet();
@@ -74,7 +75,7 @@ public class UseSvnKit {
         List<SVNLogEntry> svnLogInRevisions = svnService.findSvnLogInRevisions(revisions, 100);
         for (SVNLogEntry entry : svnLogInRevisions) {
             System.out.println(entry);
-        }
+        }*/
     }
 
     public static void testSvnClient1() throws IOException {
@@ -131,14 +132,40 @@ public class UseSvnKit {
 
         String toPath = PACKAGE_DIR + File.separator + DateKit.dateToMilliStr();
 
+        StringBuffer copyHistory = new StringBuffer();
+        StringBuffer errorHistory = new StringBuffer();
         for (FileVo vo : toCopyPathList) {
             File from = new File(vo.getAbsolutePath());
             File to = new File(toPath + vo.getRelationPath());
             if (!to.getParentFile().exists()) {
                 to.getParentFile().mkdirs();
             }
-            Files.copy(from.toPath(), to.toPath());
+
+            // 如果是目录，创建目录
+            if (from.isDirectory() && !from.exists()) {
+                from.mkdir();
+                copyHistory.append(from.getAbsolutePath()).append("\n");
+                continue;
+            }
+
+            // 复制文件
+            try {
+                Files.copy(from.toPath(), to.toPath());
+                copyHistory.append(from.getAbsolutePath()).append("\n");
+            } catch (Exception e) {
+                errorHistory.append(from.getAbsolutePath()).append("\n");
+                continue;
+            }
         }
+
+        StringBuffer logText = new StringBuffer();
+        logText.append("复制的文件记录：\n");
+        logText.append(copyHistory).append("\n\n");
+        logText.append("出错的文件记录：\n");
+        logText.append(errorHistory).append("\n");
+        FileKit.toFile(toPath + File.separator + "更新文件说明.txt", logText.toString());
+        System.out.println("file://\t" + toPath);
+        FileKit.openDirectory(toPath);
     }
 
     private static boolean isStartWithJavaCodeDir(String path){

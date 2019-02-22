@@ -1,12 +1,11 @@
 package cc.souco.toolbox.db;
 
-import cc.souco.toolbox.common.SysConfig;
 import cc.souco.toolbox.common.StringKit;
-import cc.souco.toolbox.db.dao.DbDao;
+import cc.souco.toolbox.common.SysConfig;
+import cc.souco.toolbox.db.vo.Column;
 import cc.souco.toolbox.db.vo.Database;
 import cc.souco.toolbox.db.vo.Schema;
 import cc.souco.toolbox.db.vo.Table;
-import cc.souco.toolbox.db.vo.Column;
 import cc.souco.toolbox.db.vo.code.ColumnType;
 import com.alibaba.fastjson.JSONObject;
 import com.beust.jcommander.internal.Lists;
@@ -16,11 +15,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.sql.*;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 // @Service
 public class DbAnalyze {
@@ -30,14 +29,15 @@ public class DbAnalyze {
     private static final int TABLE_ENUM_TABLE_ROW_COUNT = 30;
     private static final int COLUMN_ENUM_TABLE_ROW_COUNT = 20;
     private static final int ENUMERATE_VALUE_LENGTH = 200;
-    private static final boolean IS_TABLE_COUNT = true;
+    private static final boolean IS_TABLE_COUNT = false;
+    private static final boolean IS_CACL_ENUM = false;
     private static final int TABLE_COUNT = 15;
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
 
 
     // @Autowired
-    private DbDao dbDao;
+    // private DbDao dbDao;
 
 
     public DbAnalyze() {
@@ -221,17 +221,27 @@ public class DbAnalyze {
         ps.close();
 
         // 是否可枚举
-        if (null != table.getRowCount() && table.getRowCount() > 0 && isEnumColumnType(dataTypeName)) {
+        if (IS_CACL_ENUM && null != table.getRowCount() && table.getRowCount() > 0 && isEnumColumnType(dataTypeName)) {
             // 行数
             String enumRowCountSql = "select count(distinct " + columnName.toUpperCase() + ") DATA_ROW_COUNT from \"" + table.getSchema() + "\".\"" + table.getName() + "\"";
-            ps = con.prepareStatement(enumRowCountSql);
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                int colEnumRowCount  = rs.getInt("DATA_ROW_COUNT");
-                tableColumn.setEnumerable(colEnumRowCount < COLUMN_ENUM_TABLE_ROW_COUNT);
+            try {
+                ps = con.prepareStatement(enumRowCountSql);
+                rs = ps.executeQuery();
+                if (rs.next()) {
+                    int colEnumRowCount = rs.getInt("DATA_ROW_COUNT");
+                    tableColumn.setEnumerable(colEnumRowCount < COLUMN_ENUM_TABLE_ROW_COUNT);
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                System.out.println("error SQL : " + enumRowCountSql);
+            } finally {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
             }
-            rs.close();
-            ps.close();
         }
 
         StringBuilder sb = new StringBuilder();
@@ -309,7 +319,8 @@ public class DbAnalyze {
             List<String> excluded = schema.getExcluded();
             schema.setTables(listTables(schemaStr, excludes, excluded));
 
-            List<String> synonyms = dbDao.findSynonyms(schemaStr);
+            // List<String> synonyms = dbDao.findSynonyms(schemaStr);
+            List<String> synonyms = Lists.newArrayList();
             schema.setSynonyms(synonyms);
 
             database.getSchemas().add(schema);
