@@ -16,32 +16,27 @@
 <header th:include="common/header :: header"></header>
 <div id="appDiv" class="content-center col-center-block">
     <div class="text-center content-header">
-        <h2 class="h2">项目文件打包</h2>
-        <span class="btn btn-outline-success" v-on:click="configUser(user)">{{user.name}}</span>
+        <span class="h2">项目文件打包</span>
+        <a class="btn-sm btn-primary" v-on:click="configUser(user)"><i class="fa fa-cog" aria-hidden="true"></i> SVN：{{user.name}}</a>
     </div>
-    <div class="container">
+    <div class="container-fluid">
         <div class="row">
             <div class="col">
-                <div class="input-group schema-search-div">
-                    <select v-model:value="projectSelect" class="input-group form-control">
+                <div class="input-group schema-search-div" style="width: 33%; padding:15px 15px 15px 0;">
+                    <select id="projectSelect" v-model:value="projectSelect" class="input-group form-control">
                         <option v-for="project in projects" v-bind:value="project.location">
                             {{ project.name }} ({{ project.location }})
                         </option>
                     </select>
-                    <button class="input-group-append btn btn-primary" @click="configProject">配置</button>
-                </div>
-                <div class="input-group schema-search-div">
-                    <select v-model:value="projectSelect" class="input-group form-control">
-                        <option v-for="project in projects" v-bind:value="project.location">
-                            {{ project.name }} ({{ project.location }})
-                        </option>
-                    </select>
-                    <button class="input-group-append btn btn-primary" @click="configProject">配置</button>
+                    <div class="btn-group input-group-append">
+                        <button class="btn btn-success" @click="configProject" style=""><i class="fa fa-search" aria-hidden="true"></i></button>
+                        <button class="btn btn-primary" @click="configProject(projects, projectSelect)" style=""><i class="fa fa-wrench" aria-hidden="true"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="col">
+            <div class="col-lg-4 col-md-4">
                 <table class="table table-light">
                     <thead>
                     <tr class="text-center">
@@ -66,7 +61,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="col">
+            <div class="col-lg-8 col-md-8">
                 <!--<div class="input-group schema-search-div">
                     <button class="btn btn-dark form-control disabled" v-if="schemasSelect.length <= 0">
                         <i class="fa fa-angle-double-right" aria-hidden="true"></i>
@@ -124,6 +119,50 @@
         </form>
     </div>
 </div>
+<div id="svnProject" style="display: none;">
+    <div class="container" style="padding: 20px;">
+        <form class="form-horizontal" role="form">
+            <div class="form-group row">
+                <div class="col-sm-3 m-auto text-right">
+                    <span for="projectName" class="control-label">名称：</span>
+                </div>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="projectName" v-model="project.name" placeholder="如 大厅管理系统">
+                </div>
+            </div>
+            <div class="form-group row">
+                <span for="projectSelect" class="col-sm-3 control-label m-auto text-right">项目文件夹路径：</span>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="projectLocation" v-model="project.location" placeholder="如 D:/code/project_a">
+                </div>
+            </div>
+            <div class="form-group row">
+                <span class="col-sm-3 control-label m-auto text-right">JAVA源码路径：</span>
+                <div class="col-sm-9">
+                    <div style="padding:5px 0;">
+                        <span v-for="(javaPath, index) in project.javaPath" class="btn-sm btn-success" style="margin: 0 10px 10px 0;">{{javaPath}} <i class="fa fa-times" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" v-model="project.javaPathAdd" placeholder="如 /system_src（与项目文件夹路径的相对路径）">
+                        <span class="btn btn-primary"><i class="fa fa-plus" aria-hidden="true"></i> 添加</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <span for="projectSelect" class="col-sm-3 control-label m-auto text-right">编译文件输出路径：</span>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="projectCompilePath" v-model="project.compilePath" placeholder="如 /WebRoot/WEB-INF/classes（与项目文件夹路径的相对路径）">
+                </div>
+            </div>
+            <div class="form-group row">
+                <span for="projectSelect" class="col-sm-3 control-label m-auto text-right">文件打包输出路径：</span>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="projectOutputPath" v-model="project.outputPath" placeholder="如 F:/project/output">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 <script>
     var vueApp;
     $(function () {
@@ -140,32 +179,43 @@
                     name: 'souco',
                     password: ''
                 },
-                projectSelect: 'F:/happy/project',
                 projects: [
                     {
+                        name: '四川审批',
                         location: 'D:/code/sc_sp',
-                        name: '四川审批'
+                        javaPath: [
+                            "src",
+                            "src2"
+                        ],
+                        compilePath: "",
+                        outputPath: ""
                     }, {
+                        name: '开心项目',
                         location: 'F:/happy/project',
-                        name: '开心项目'
+                        javaPath: [
+                            "src",
+                            "src3"
+                        ],
+                        compilePath: "/WebRoot/WEB-INF/classes",
+                        outputPath: "F:/happy/output"
                     }
-                ]
-
+                ],
+                projectSelect: ""
             },
             methods: {
                 configUser: function (user) {
                     configUserVue.$data.user = user;
                     layer.open({
                         type: 1,
-                        title: "更新",
+                        title: "配置SVN账户信息",
                         area: ["400px", "220px"],
                         content: $("#svnAccount"),
-                        btn: ["测试", "保存"],
-                        test: function () {
-                            this.testConfig();
+                        btn: ["测试", "保存", "取消"],
+                        btn1: function () {
+                            vueApp.testConfig();
                             return false;
                         },
-                        yes: function (index) {
+                        btn2: function (index) {
                             console.log("confirm ...");
                             layer.close(index);
                         },
@@ -174,8 +224,28 @@
                         }
                     });
                 },
-                configProject: function (index) {
-                    openDialog();
+                configProject: function (projects, projectSelect) {
+                    configProjectVue.$data.projects = projects;
+                    configProjectVue.$data.projectSelect = projectSelect;
+                    for (var i = 0; i < projects.length; i++) {
+                        if (projectSelect === projects[i].location) {
+                            configProjectVue.$data.project = projects[i];
+                        }
+                    }
+                    layer.open({
+                        type: 1,
+                        title: "配置项目信息",
+                        area: ["800px", "600px"],
+                        content: $("#svnProject"),
+                        btn: ["保存", "取消"],
+                        btn1: function (index) {
+                            console.log("confirm ...");
+                            layer.close(index);
+                        },
+                        btn2: function () {
+                            console.log("close ...");
+                        }
+                    });
                 },
                 testConfig: function() {
                     console.log("test ...");
@@ -188,6 +258,16 @@
         el: "#svnAccount",
         data: {
             user: {}
+        }
+    });
+
+    var configProjectVue = new Vue({
+        el: "#svnProject",
+        data: {
+            project: {},
+            projects:[],
+            javaPathAdd: "",
+            projectSelect: {}
         }
     });
 
