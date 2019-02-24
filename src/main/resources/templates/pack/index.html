@@ -24,8 +24,8 @@
             <div class="col">
                 <div class="input-group schema-search-div" style="width: 33%; padding:15px 15px 15px 0;">
                     <select id="projectSelect" v-model:value="projectSelect" class="input-group form-control">
-                        <option v-for="project in projects" v-bind:value="project.location">
-                            {{ project.name }} ({{ project.location }})
+                        <option v-for="(project, index) in projects" v-bind:value="index">
+                            {{ project.name }} [{{ project.location }}]
                         </option>
                     </select>
                     <div class="btn-group input-group-append">
@@ -103,17 +103,24 @@
         <form class="form-horizontal" role="form">
             <div class="form-group row">
                 <div class="col-sm-3 m-auto">
-                    <span for="name" class="control-label">用户名</span>
+                    <span for="name" class="control-label text-right">用户名：</span>
                 </div>
                 <div class="col-sm-9">
                     <input type="text" class="form-control" id="name" v-model="user.name" placeholder="请输入用户名">
                 </div>
             </div>
             <div class="form-group row">
-                <span for="password" class="col-sm-3 control-label m-auto">密码</span>
+                <span for="password" class="col-sm-3 control-label m-auto text-right">密码：</span>
                 <div class="col-sm-9">
                     <input type="password" class="form-control" id="password" v-model="user.password"
                            placeholder="请输入密码">
+                </div>
+            </div>
+            <div class="form-group row">
+                <span for="location" class="col-sm-3 control-label m-auto text-right">地址：</span>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control" id="location" v-model="user.location"
+                           placeholder="SVN项目地址或SVN地址">
                 </div>
             </div>
         </form>
@@ -122,6 +129,21 @@
 <div id="svnProject" style="display: none;">
     <div class="container" style="padding: 20px;">
         <form class="form-horizontal" role="form">
+            <div class="form-group row">
+                <div class="col input-group">
+                    <select id="projectSelectLocation" v-model:value="projectSelect" @change="configProjectChange(projectSelect)" class="input-group form-control">
+                        <option v-for="(project, index) in projects" v-bind:value="index">
+                            {{ project.name }} [{{ project.location }}]
+                        </option>
+                    </select>
+                    <div class="btn-group input-group-append">
+                        <button type="button" class="btn btn-success" @click="newProject" style=""><i class="fa fa-plus" aria-hidden="true"></i> 新增</button>
+                        <button type="button" class="btn btn-danger" @click="deleteProject(projectSelect)" style=""><i class="fa fa-trash" aria-hidden="true"></i> 删除</button>
+                        <button type="button" class="btn btn-primary" @click="copyProject(project)" style=""><i class="fa fa-clone" aria-hidden="true"></i> 另存为</button>
+                    </div>
+                </div>
+            </div>
+            <hr/>
             <div class="form-group row">
                 <div class="col-sm-3 m-auto text-right">
                     <span for="projectName" class="control-label">名称：</span>
@@ -139,12 +161,12 @@
             <div class="form-group row">
                 <span class="col-sm-3 control-label m-auto text-right">JAVA源码路径：</span>
                 <div class="col-sm-9">
-                    <div style="padding:5px 0;">
-                        <span v-for="(javaPath, index) in project.javaPath" class="btn-sm btn-success" style="margin: 0 10px 10px 0;">{{javaPath}} <i class="fa fa-times" aria-hidden="true"></i></span>
+                    <div style="line-height: 40px;">
+                        <span v-for="(javaPath, index) in project.javaPath" @click="removeJavaPath(index)" class="btn-sm btn-success" style="margin-right: 10px;">{{javaPath}} <i class="fa fa-times" aria-hidden="true"></i></span>
                     </div>
                     <div class="input-group">
-                        <input type="text" class="form-control" v-model="project.javaPathAdd" placeholder="如 /system_src（与项目文件夹路径的相对路径）">
-                        <span class="btn btn-primary"><i class="fa fa-plus" aria-hidden="true"></i> 添加</span>
+                        <input type="text" class="form-control" v-model="javaPathAdd" @keyup.enter="addJavaPath(javaPathAdd)" placeholder="如 /system_src（与项目文件夹路径的相对路径）">
+                        <span class="btn btn-primary" @click="addJavaPath(javaPathAdd)"><i class="fa fa-plus" aria-hidden="true"></i> 添加</span>
                     </div>
                 </div>
             </div>
@@ -177,8 +199,10 @@
                 searchText: '',
                 user: {
                     name: 'souco',
-                    password: ''
+                    password: '123',
+                    location: "G:/code/project"
                 },
+                projectSelect: "",
                 projects: [
                     {
                         name: '四川审批',
@@ -199,56 +223,54 @@
                         compilePath: "/WebRoot/WEB-INF/classes",
                         outputPath: "F:/happy/output"
                     }
-                ],
-                projectSelect: ""
+                ]
             },
             methods: {
                 configUser: function (user) {
-                    configUserVue.$data.user = user;
+                    configUserVue.$data.user = clone(user);
                     layer.open({
                         type: 1,
                         title: "配置SVN账户信息",
-                        area: ["400px", "220px"],
+                        area: ["400px", "300px"],
                         content: $("#svnAccount"),
                         btn: ["测试", "保存", "取消"],
                         btn1: function () {
-                            vueApp.testConfig();
+                            configUserVue.testConfig();
                             return false;
                         },
                         btn2: function (index) {
-                            console.log("confirm ...");
+                            vueApp.user = clone(configUserVue.$data.user);
                             layer.close(index);
                         },
-                        cancel: function () { //点击关闭按钮
-                            console.log("close ...");
+                        cancel: function (index) {
+                            layer.close(index);
+                            // 点击关闭按钮
                         }
                     });
                 },
                 configProject: function (projects, projectSelect) {
-                    configProjectVue.$data.projects = projects;
-                    configProjectVue.$data.projectSelect = projectSelect;
-                    for (var i = 0; i < projects.length; i++) {
-                        if (projectSelect === projects[i].location) {
-                            configProjectVue.$data.project = projects[i];
-                        }
+                    if (projectSelect === null || projectSelect === undefined || projectSelect === '') {
+                        projectSelect = 0;
                     }
+                    configProjectVue.$data.projects = clone(projects);
+                    configProjectVue.$data.projectSelect = projectSelect;
+                    configProjectVue.$data.project = configProjectVue.$data.projects[projectSelect];
                     layer.open({
                         type: 1,
                         title: "配置项目信息",
-                        area: ["800px", "600px"],
+                        area: ["800px", "500px"],
                         content: $("#svnProject"),
                         btn: ["保存", "取消"],
                         btn1: function (index) {
-                            console.log("confirm ...");
+                            vueApp.projects = clone(configProjectVue.$data.projects);
+                            vueApp.projectSelect = configProjectVue.$data.projectSelect;
+                            vueApp.project = vueApp.projects[vueApp.projectSelect];
                             layer.close(index);
                         },
                         btn2: function () {
                             console.log("close ...");
                         }
                     });
-                },
-                testConfig: function() {
-                    console.log("test ...");
                 }
             }
         });
@@ -258,6 +280,23 @@
         el: "#svnAccount",
         data: {
             user: {}
+        },
+        methods: {
+            testConfig: function() {
+                var url = "/pack/testSvnConfig";
+                var data = {
+                    username: this.user.name,
+                    password: this.user.password,
+                    location: this.user.location
+                };
+                $.post(url, data, function (result) {
+                    if (result.success) {
+                        layer.msg("测试成功！", {icon: 2});
+                    } else {
+                        layer.msg("测试失败！" + result.msg, {icon: 1});
+                    }
+                });
+            }
         }
     });
 
@@ -267,7 +306,50 @@
             project: {},
             projects:[],
             javaPathAdd: "",
-            projectSelect: {}
+            projectSelect: ""
+        },
+        methods: {
+            addJavaPath: function(javaPathAdd){
+                if (null == javaPathAdd || '' === javaPathAdd) {
+                    layer.msg("添加的路径不能为空！", {icon: 0});
+                    return;
+                } else if (this.project.javaPath != null && this.project.javaPath.indexOf(javaPathAdd) > -1) {
+                    layer.msg(this.javaPathAdd + "已存在！", {icon: -1});
+                    return;
+                }
+
+                if (this.project.javaPath === null || this.project.javaPath === undefined) {
+                    this.project.javaPath = [];
+                }
+                this.project.javaPath.push(javaPathAdd);
+                this.javaPathAdd = "";
+            },
+            removeJavaPath: function(index){
+                this.project.javaPath.splice(index, 1)
+            },
+            configProjectChange: function(projectSelect) {
+                this.project = this.projects[projectSelect];
+            },
+            newProject: function(){
+                this.project = {name: '新项目'};
+                this.projects.push(this.project);
+                this.projectSelect = this.projects.length - 1;
+            },
+            deleteProject: function(projectSelect){
+                this.projects.splice(projectSelect, 1);
+                if (projectSelect >= this.projects.length) {
+                    this.projectSelect = this.projects.length - 1;
+                }
+                this.project = this.projects[this.projectSelect];
+
+            },
+            copyProject: function(project){
+                var newProject = clone(project);
+                newProject.name = newProject.name + "2";
+                this.project = newProject;
+                this.projects.push(newProject);
+                this.projectSelect = this.projects.length - 1;
+            }
         }
     });
 
@@ -278,6 +360,44 @@
             area: ['420px', '240px'], //宽高
             content: 'html内容'
         });
+    }
+
+    function clone(obj) {
+        var obj2;
+        switch (typeof obj) {
+            case 'undefined':
+                break;
+            case 'string'   :
+                obj2 = obj + '';
+                break;
+            case 'number'   :
+                obj2 = obj - 0;
+                break;
+            case 'boolean'  :
+                obj2 = obj;
+                break;
+            case 'object'   :
+                if (obj === null) {
+                    obj2 = null;
+                } else {
+                    if (obj instanceof Array) {
+                        obj2 = [];
+                        for (var i = 0, len = obj.length; i < len; i++) {
+                            obj2.push(clone(obj[i]));
+                        }
+                    } else {
+                        obj2 = {};
+                        for (var k in obj) {
+                            obj2[k] = clone(obj[k]);
+                        }
+                    }
+                }
+                break;
+            default:
+                obj2 = obj;
+                break;
+        }
+        return obj2;
     }
 </script>
 </body>
