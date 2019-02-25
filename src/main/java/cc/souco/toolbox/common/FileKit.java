@@ -120,8 +120,12 @@ public class FileKit {
     }
 
     public static void toFile(String fullFilename, String value){
+        toFile(newFileSafety(fullFilename), value);
+    }
+
+    public static void toFile(File file, String value){
         try {
-            FileWriter fileWriter = new FileWriter(newFileSafety(fullFilename));
+            FileWriter fileWriter = new FileWriter(file);
             fileWriter.write(value);
             fileWriter.close();
         } catch (IOException e) {

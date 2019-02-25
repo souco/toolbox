@@ -1,0 +1,22 @@
+[
+  {
+    "name": "四川审批",
+    "location": "D:/code/sc_sp",
+    "javaPath": [
+      "src",
+      "src2"
+    ],
+    "compilePath": "",
+    "outputPath": ""
+  },
+  {
+    "name": "新疆审批",
+    "location": "D:/code/xj_sp",
+    "javaPath": [
+      "src",
+      "src3"
+    ],
+    "compilePath": "/WebRoot/WEB-INF/classes",
+    "outputPath": "F:/happy/output"
+  }
+]

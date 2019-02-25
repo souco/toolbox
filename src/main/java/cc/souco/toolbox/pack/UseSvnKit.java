@@ -2,7 +2,7 @@ package cc.souco.toolbox.pack;
 
 import cc.souco.toolbox.common.DateKit;
 import cc.souco.toolbox.common.FileKit;
-import cc.souco.toolbox.pack.service.SvnService;
+import cc.souco.toolbox.pack.vo.FileVo;
 import com.beust.jcommander.internal.Lists;
 import com.beust.jcommander.internal.Sets;
 import org.apache.commons.lang3.StringUtils;

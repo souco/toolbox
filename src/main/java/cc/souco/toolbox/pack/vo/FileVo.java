@@ -1,4 +1,4 @@
-package cc.souco.toolbox.pack;
+package cc.souco.toolbox.pack.vo;
 
 public class FileVo {
     String relationPath;

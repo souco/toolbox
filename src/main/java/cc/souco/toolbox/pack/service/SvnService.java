@@ -1,18 +1,23 @@
 package cc.souco.toolbox.pack.service;
 
+import cc.souco.toolbox.common.FileKit;
 import cc.souco.toolbox.pack.UseSvnKit;
+import cc.souco.toolbox.pack.vo.ProjectConfig;
+import cc.souco.toolbox.pack.vo.SvnLogInfoVo;
+import cc.souco.toolbox.pack.vo.SvnUser;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.beust.jcommander.internal.Lists;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ResourceUtils;
 import org.tmatesoft.svn.core.SVNAuthenticationException;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.auth.BasicAuthenticationManager;
-import org.tmatesoft.svn.core.wc.SVNClientManager;
-import org.tmatesoft.svn.core.wc.SVNLogClient;
-import org.tmatesoft.svn.core.wc.SVNRevision;
-import org.tmatesoft.svn.core.wc.SVNRevisionRange;
+import org.tmatesoft.svn.core.wc.*;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -22,22 +27,29 @@ public class SvnService {
 
     /**
      * 测试svn账户信息是否正确
-     * @param username svn用户名
-     * @param password svn密码
-     * @param location svn项目路径
+     * @param user svn用户信息
      * @return 是否测试通过
      */
-    public boolean testSvnConfig(String username, String password, String location) {
+    public boolean testSvnConfig(SvnUser user) {
+        String location = user.getLocation();
         try {
-            SVNLogClient logClient = getSvnLogClient(username, password);
-            File[] files = {new File(location)};
-            SVNRevision end = SVNRevision.create(-1L);
-            logClient.doLog(files, null, end, true, true, 1, null);
+            File file = new File(location);
+            if (!file.exists()) {
+                throw new RuntimeException("SVN工作目录不存在！");
+            } else if (!file.isDirectory()) {
+                location = file.getParentFile().getAbsolutePath();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("SVN工作目录不存在！");
+        }
+
+        try {
+            SVNClientManager manager = getSvnClientManager(user.getUsername(), user.getPassword());
+            manager.getWCClient().doInfo(new File("E:\\Code\\xj_sp"), SVNRevision.HEAD);
         } catch (SVNAuthenticationException authException) {
-            return false;
+            throw new RuntimeException("用户名或密码不正确！");
         } catch (SVNException e) {
-            e.printStackTrace();
-            return false;
+            throw new RuntimeException(location + "不是SVN工作目录！");
         }
         return true;
     }
@@ -48,33 +60,49 @@ public class SvnService {
         return clientManager.getLogClient();
     }
 
+    private SVNClientManager getSvnClientManager(String username, String password){
+        BasicAuthenticationManager authManager = BasicAuthenticationManager.newInstance(username, password.toCharArray());
+        return SVNClientManager.newInstance(null, authManager);
+    }
+
+    @Deprecated
     private SVNLogClient getSvnLogClient(){
         BasicAuthenticationManager authManager = BasicAuthenticationManager.newInstance(UseSvnKit.SVN_NAME, UseSvnKit.SVN_PASSWORD.toCharArray());
         SVNClientManager clientManager = SVNClientManager.newInstance(null, authManager);
         return clientManager.getLogClient();
     }
 
-    public List<SVNLogEntry> findSvnLog(Long startRevision, Long endRevision, int limit){
-        List<SVNLogEntry> svnLogEntries = Lists.newArrayList();
+    public List<SvnLogInfoVo> findSvnLog(SvnUser user, String location, Long startRevision, Long endRevision, int limit){
+        List<SvnLogInfoVo> LogInfos = Lists.newArrayList();
 
-        File[] files = {new File(UseSvnKit.PROJECT_DIR)};
+        File[] files = {new File(location)};
+
+        SVNClientManager svnClientManager = getSvnClientManager(user.getUsername(), user.getPassword());
+        SVNInfo svnInfo;
+        try {
+            svnInfo = svnClientManager.getWCClient().doInfo(new File(location), SVNRevision.HEAD);
+        } catch (SVNException e) {
+            throw new RuntimeException("获取SVN信息失败！");
+        }
 
         SVNRevision start = null;
-        SVNRevision end = null;
+        SVNRevision end;
         if (null != startRevision) {
-            start = SVNRevision.create(0L);
+            start = SVNRevision.create(startRevision);
         }
-        if (null != endRevision) {
+        if (null == endRevision) {
             end = SVNRevision.create(-1L);
+        } else {
+            end = SVNRevision.create(endRevision);
         }
 
         try {
-            getSvnLogClient().doLog(files, start, end, true, true, limit, svnLogEntry -> svnLogEntries.add(svnLogEntry));
+            svnClientManager.getLogClient().doLog(files, start, end, true, true, limit, svnLogEntry -> LogInfos.add(new SvnLogInfoVo(svnLogEntry)));
         } catch (SVNException e) {
             e.printStackTrace();
         }
 
-        return svnLogEntries;
+        return LogInfos;
     }
 
     public List<SVNLogEntry> findSvnLogInRevisions(Set<Long> revisions, Integer limit){
@@ -100,5 +128,47 @@ public class SvnService {
         }
 
         return svnLogEntries;
+    }
+
+    public List<ProjectConfig> getProjectConfigs() {
+        File projectsFile = null;
+        try {
+            projectsFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "projects.json");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        String projectsStr = FileKit.toString(projectsFile);
+        return JSONArray.parseArray(projectsStr, ProjectConfig.class);
+    }
+
+    public void saveProjectConfigs(List<ProjectConfig> configs) {
+        File projectsFile = null;
+        try {
+            projectsFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "projects.json");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        FileKit.toFile(projectsFile, JSONArray.toJSONString(configs));
+    }
+
+    public SvnUser getSvnUser() {
+        File userJsonFile = null;
+        try {
+            userJsonFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "svn.json");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        String userJsonStr = FileKit.toString(userJsonFile);
+        return JSON.parseObject(userJsonStr, SvnUser.class);
+    }
+
+    public void saveSvnUser(SvnUser user) {
+        File svnUserFile = null;
+        try {
+            svnUserFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "svn.json");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        FileKit.toFile(svnUserFile, JSONArray.toJSONString(user));
     }
 }
