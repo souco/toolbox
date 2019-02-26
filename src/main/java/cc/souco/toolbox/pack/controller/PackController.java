@@ -2,9 +2,7 @@ package cc.souco.toolbox.pack.controller;
 
 import cc.souco.toolbox.common.Ret;
 import cc.souco.toolbox.pack.service.SvnService;
-import cc.souco.toolbox.pack.vo.ProjectConfig;
-import cc.souco.toolbox.pack.vo.SvnLogInfoVo;
-import cc.souco.toolbox.pack.vo.SvnUser;
+import cc.souco.toolbox.pack.vo.*;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,8 +105,22 @@ public class PackController {
                 throw new RuntimeException("请先选择或配置SVN账户信息！");
             }
 
-            List<SvnLogInfoVo> infos = svnService.findSvnLog(user, config.getLocation(), null, null, 10);
+            List<SvnLogInfo> infos = svnService.findSvnLog(user, config.getLocation(), null, null, 10);
             ret.set("msg", "保存成功").set("infos", infos);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ret.setFail(e.getMessage());
+        }
+        return ret;
+    }
+
+    @ResponseBody
+    @RequestMapping("/packageUpdate")
+    public Ret packageUpdate(@RequestBody PackageParameterVo packageVo){
+        Ret ret = Ret.ok();
+        try {
+            svnService.packageUpdate(packageVo.getInfo(), packageVo.getConfig());
+            ret.set("msg", "保存成功");
         } catch (Exception e) {
             e.printStackTrace();
             return ret.setFail(e.getMessage());

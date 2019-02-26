@@ -1,5 +1,6 @@
 package cc.souco.toolbox.pack.vo;
 
+import cc.souco.toolbox.common.StringKit;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.beust.jcommander.internal.Lists;
 import org.tmatesoft.svn.core.SVNLogEntry;
@@ -9,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class SvnLogInfoVo {
+public class SvnLogInfo {
     private Long revision;
     private String remark;
     private String author;
@@ -18,10 +19,10 @@ public class SvnLogInfoVo {
     private List<SvnFileInfo> files;
     boolean isSelected;
 
-    public SvnLogInfoVo() {
+    public SvnLogInfo() {
     }
 
-    public SvnLogInfoVo(String projectPrePath, SVNLogEntry entry) {
+    public SvnLogInfo(String projectPrePath, SVNLogEntry entry) {
         this.revision = entry.getRevision();
         this.remark = entry.getMessage();
         this.author = entry.getAuthor();
@@ -47,7 +48,7 @@ public class SvnLogInfoVo {
                 changeType = SvnFileInfo.CHANGE_TYPE_MODIFIED;
             }
 
-            String relationPath = path.getPath();
+            String relationPath = StringKit.removeSlashAndBackslashPrefix(path.getPath());
             if (relationPath.startsWith(projectPrePath)) {
                 files.add(new SvnFileInfo(relationPath.substring(relationPath.indexOf(projectPrePath) + projectPrePath.length()), changeType, fileType));
             }
@@ -94,11 +95,11 @@ public class SvnLogInfoVo {
         this.files = files;
     }
 
-    public boolean isSelected() {
+    public boolean getIsSelected() {
         return isSelected;
     }
 
-    public void setSelected(boolean selected) {
+    public void setIsSelected(boolean selected) {
         isSelected = selected;
     }
 }

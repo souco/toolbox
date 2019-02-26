@@ -1,10 +1,9 @@
 package cc.souco.toolbox.pack.service;
 
 import cc.souco.toolbox.common.FileKit;
+import cc.souco.toolbox.common.StringKit;
 import cc.souco.toolbox.pack.UseSvnKit;
-import cc.souco.toolbox.pack.vo.ProjectConfig;
-import cc.souco.toolbox.pack.vo.SvnLogInfoVo;
-import cc.souco.toolbox.pack.vo.SvnUser;
+import cc.souco.toolbox.pack.vo.*;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.beust.jcommander.internal.Lists;
@@ -20,6 +19,8 @@ import org.tmatesoft.svn.core.wc.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -49,7 +50,7 @@ public class SvnService {
 
         try {
             SVNClientManager manager = getSvnClientManager(user.getUsername(), user.getPassword());
-            manager.getWCClient().doInfo(new File("E:\\Code\\xj_sp"), SVNRevision.HEAD);
+            manager.getWCClient().doInfo(new File(user.getLocation()), SVNRevision.HEAD);
         } catch (SVNAuthenticationException authException) {
             throw new RuntimeException("用户名或密码不正确！");
         } catch (SVNException e) {
@@ -76,8 +77,8 @@ public class SvnService {
         return clientManager.getLogClient();
     }
 
-    public List<SvnLogInfoVo> findSvnLog(SvnUser user, String location, Long startRevision, Long endRevision, int limit){
-        List<SvnLogInfoVo> LogInfos = Lists.newArrayList();
+    public List<SvnLogInfo> findSvnLog(SvnUser user, String location, Long startRevision, Long endRevision, int limit){
+        List<SvnLogInfo> LogInfos = Lists.newArrayList();
 
         File[] files = {new File(location)};
 
@@ -86,6 +87,7 @@ public class SvnService {
         try {
             svnInfo = svnClientManager.getWCClient().doInfo(new File(location), SVNRevision.HEAD);
         } catch (SVNException e) {
+            e.printStackTrace();
             throw new RuntimeException("获取SVN信息失败！");
         }
 
@@ -102,7 +104,7 @@ public class SvnService {
 
         try {
             String finalProjectPrePath = svnInfo.getPath();
-            svnClientManager.getLogClient().doLog(files, start, end, true, true, limit, svnLogEntry -> LogInfos.add(new SvnLogInfoVo(finalProjectPrePath, svnLogEntry)));
+            svnClientManager.getLogClient().doLog(files, start, end, true, true, limit, svnLogEntry -> LogInfos.add(new SvnLogInfo(finalProjectPrePath, svnLogEntry)));
         } catch (SVNException e) {
             e.printStackTrace();
         }
@@ -175,5 +177,57 @@ public class SvnService {
             e.printStackTrace();
         }
         FileKit.toFile(svnUserFile, JSONArray.toJSONString(user));
+    }
+
+    public void packageUpdate(SvnLogInfo info, ProjectConfig config) {
+        for (SvnFileInfo fileInfo : info.getFiles()) {
+            if (SvnFileInfo.CHANGE_TYPE_DELETED == fileInfo.getChangeType() || SvnFileInfo.FILE_TYPE_DIR == fileInfo.getFileType()) {
+                continue;
+            }
+
+            String path = StringKit.correctSlash(fileInfo.getPath());
+            String compilePath;
+            if (isStartWithJavaCodeDir(config, path)) {
+                compilePath = config.getCompilePath() + File.separator + path.substring(getJavaCodeDirLength(config, path));
+            } else {
+                compilePath = path;
+            }
+            String absolutePath = config.getLocation() + File.separator + path;
+
+            File from = new File(absolutePath);
+            File to = new File(config.getOutputPath() + File.separator + compilePath);
+            if (!to.getParentFile().exists()) {
+                to.getParentFile().mkdirs();
+            }
+
+            // 复制文件
+            try {
+                Path copy = Files.copy(from.toPath(), to.toPath());
+                logger.info("copy :" + copy);
+            } catch (Exception e) {
+                logger.info("copy error:" + from.toPath());
+                continue;
+            }
+        }
+    }
+
+    private static boolean isStartWithJavaCodeDir(ProjectConfig config, String path){
+        for (String dir : config.getJavaPath()) {
+            dir = StringKit.correctSlash(StringKit.removeSlashAndBackslashPrefix(StringKit.removeSlashAndBackslashSuffix(dir)));
+            if(path.startsWith(dir)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int getJavaCodeDirLength(ProjectConfig config, String path){
+        path = StringKit.correctSlash(StringKit.removeSlashAndBackslashPrefix(StringKit.removeSlashAndBackslashSuffix(path)));
+        for (String dir : config.getJavaPath()) {
+            if(path.startsWith(dir)){
+                return dir.length();
+            }
+        }
+        throw new RuntimeException();
     }
 }

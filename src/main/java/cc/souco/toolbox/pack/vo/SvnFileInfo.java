@@ -64,4 +64,7 @@ public class SvnFileInfo {
             default: return "未知";
         }
     }
+
+    public void setChangeTypeStr(String value) {
+    }
 }

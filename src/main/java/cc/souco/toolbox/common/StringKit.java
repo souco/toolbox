@@ -2,6 +2,7 @@ package cc.souco.toolbox.common;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,6 +68,35 @@ public class StringKit {
             sb.append(obj.toString()).append("\r\n");
         }
         return sb.toString();
+    }
+
+    public static String removeSlashAndBackslashPrefix(String content) {
+        if (content.startsWith("/") || content.startsWith("\\")) {
+            content = content.substring(1);
+        } else {
+            return content;
+        }
+        return removeSlashAndBackslashPrefix(content);
+    }
+
+    public static String removeSlashAndBackslashSuffix(String content) {
+        if (content.endsWith("/")) {
+            content = content.substring(0, content.lastIndexOf("/"));
+        } else if(content.endsWith("\\")) {
+            content = content.substring(0, content.lastIndexOf("\\"));
+        } else {
+            return content;
+        }
+        return removeSlashAndBackslashSuffix(content);
+    }
+
+    public static String correctSlash(String content) {
+        if ("/".equals(File.separator)) {
+            return content.replaceAll("\\\\", "/");
+        } else if ("\\\\".equals(File.separator)) {
+            return content.replaceAll("/", "\\\\");
+        }
+        return content;
     }
 
 	public static void main(String[] args) {
