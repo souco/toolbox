@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Controller
@@ -77,7 +76,7 @@ public class PackController {
 
     @ResponseBody
     @RequestMapping("/saveProjectConfig")
-    public Ret saveProjectConfig(HttpServletRequest request, String configs){
+    public Ret saveProjectConfig(String configs){
         Ret ret = Ret.ok();
         try {
             List<ProjectConfig> configList = JSON.parseArray(configs, ProjectConfig.class);

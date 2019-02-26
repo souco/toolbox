@@ -20,7 +20,7 @@
         <a class="btn-sm btn-primary" v-on:click="configUser(user)"><i class="fa fa-cog" aria-hidden="true"></i> SVN：{{user.username}}</a>
     </div>
     <div class="container-fluid">
-        <div class="row">
+        <!--<div class="row">
             <div class="col">
                 <div class="input-group schema-search-div" style="width: 33%; padding:15px 15px 15px 0;">
                     <select id="projectSelect" v-model:value="projectSelect" class="input-group form-control">
@@ -34,23 +34,39 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>-->
+        <!--版本列表-->
         <div class="row">
             <div class="col-lg-4 col-md-4">
-                <table class="table table-light">
+                <div class="input-group schema-search-div" style="padding-bottom: 15px;">
+                    <select id="projectSelect" v-model:value="projectSelect" class="input-group form-control">
+                        <option v-for="(project, index) in projects" v-bind:value="index">
+                            {{ project.name }} [{{ project.location }}]
+                        </option>
+                    </select>
+                    <div class="btn-group input-group-append">
+                        <button class="btn btn-success" @click="listSvnLog(projectSelect)" style=""><i class="fa fa-search" aria-hidden="true"></i></button>
+                        <button class="btn btn-primary" @click="configProject(projects, projectSelect)" style=""><i class="fa fa-wrench" aria-hidden="true"></i></button>
+                    </div>
+                </div>
+                <table class="table table-hover">
                     <thead>
                     <tr class="text-center">
                         <th style="width: 100px" class="text-center">版本号</th>
                         <th class="text-center">提交时间</th>
                         <th class="text-center">提交人</th>
+                        <th class="text-center">操作</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr v-if="logInfos.length > 0" v-for="(logInfo, index) in logInfos" class="text-center">
+                    <tr v-if="logInfos.length > 0" v-for="(logInfo, index) in logInfos" @mouseover="logInfosHover(index)" class="text-center">
                         <td class="align-middle">#{{logInfo.revision}}</td>
                         <td class="align-middle">{{logInfo.date}}</td>
                         <td class="align-middle">{{logInfo.author}}</td>
-                        <!--<td><span class="btn btn-outline-success"><i class="fa fa-chevron-right" aria-hidden="true"></i></i> 选择</span></td>-->
+                        <td>
+                            <span v-if="!logInfo.isSelected" class="btn-sm btn-outline-success" @click="selectSvnLog(index)">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></span>
+                            <span v-if="logInfo.isSelected" class="btn-sm btn-outline-danger" @click="unSelectSvnLog(index)">取消 <i class="fa fa-chevron-right" aria-hidden="true"></i></span>
+                        </td>
                     </tr>
                     <tr v-if="logInfos.length <= 0">
                         <td colspan="3" class="text-center">
@@ -61,39 +77,55 @@
                     </tbody>
                 </table>
             </div>
-            <div class="col-lg-8 col-md-8">
-                <!--<div class="input-group schema-search-div">
-                    <button class="btn btn-dark form-control disabled" v-if="schemasSelect.length <= 0">
-                        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
-                        下一步
-                    </button>
-                    <button class="btn btn-success form-control" v-if="schemasSelect.length > 0" @click="dbNext">
-                        <i class="fa fa-angle-double-right" aria-hidden="true"></i>
-                        下一步
-                    </button>
+
+            <!-- 版本详情 -->
+            <div class="col-lg-4 col-md-4">
+                <div style="height: 53px;"></div>
+                <div v-if="logInfo != null && logInfo.revision != undefined" style="border: 1px solid #dee2e6; padding: 0 10px 10px 10px;">
+                    <div style="line-height: 24px; font-weight: bold; text-align: center; border-bottom: solid 2px #dee2e6; padding: 12px; margin-bottom: 12px;">
+                        <span>#{{logInfo.revision}}版本信息</span>
+                    </div>
+                    <span>版本号：#{{logInfo.revision}}</span><br/>
+                    <span>提交人：{{logInfo.author}}</span><br/>
+                    <span>提交时间：{{logInfo.date}}</span><br/>
+                    <span>提交说明：{{logInfo.remark}}</span><br/>
+                    <span>涉及文件：</span>
+                    <table style="table-layout: fixed; word-wrap: break-word; width: 100%; max-width: 100%;">
+                        <tr>
+                            <th style="width: 10%;">类型</th>
+                            <th style="width: 90%;">文件路径</th>
+                        </tr>
+                        <tr v-for="file in logInfo.files" style="vertical-align: top;">
+                            <td>{{file.changeTypeStr}}</td>
+                            <td>{{file.path}}</td>
+                        </tr>
+                    </table>
                 </div>
-                <table class="table table-light">
-                    <thead>
-                    <tr class="text-center">
-                        <th style="width: 100px" class="text-center">序号</th>
-                        <th class="text-center">模式名</th>
-                        <th class="text-center">操作</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr v-if="schemasSelect.length > 0" v-for="(schemaStr, index) in schemasSelect" class="text-center">
-                        <td class="align-middle">{{index + 1}}/{{schemasSelect.length}}</td>
-                        <td class="align-middle">{{schemaStr}}</td>
-                        <td><span class="btn btn-outline-danger" v-on:click="removeSchema(index)">
-                            <i class="fa fa-chevron-left" aria-hidden="true"></i></i> 取消</span></td>
-                    </tr>
-                    <tr v-if="schemasSelect.length <= 0">
-                        <td colspan="3" class="text-center">
-                            <span>请选择需要导出的数据库模式...</span>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>-->
+            </div>
+
+            <!-- 打包详情 -->
+            <div class="col-lg-4 col-md-4">
+                <div style="height: 53px;"></div>
+                <div v-if="logInfoSelected != null && logInfoSelected.revision != undefined" style="border: 1px solid #dee2e6; padding: 0 10px 10px 10px;">
+                    <div style="line-height: 24px; font-weight: bold; text-align: center; border-bottom: solid 2px #dee2e6; padding: 12px; margin-bottom: 12px;">
+                        <span>打包相关信息</span>
+                    </div>
+                    <span>最新版本号：#{{logInfoSelected.revision}}</span><br/>
+                    <span>最新提交人：{{logInfoSelected.author}}</span><br/>
+                    <span>最后提交时间：{{logInfoSelected.date}}</span><br/>
+                    <span>最后提交说明：{{logInfoSelected.remark}}</span><br/>
+                    <span>打包涉及文件：</span>
+                    <table style="table-layout: fixed; word-wrap: break-word; width: 100%; max-width: 100%;">
+                        <tr>
+                            <th style="width: 10%;">类型</th>
+                            <th style="width: 90%;">文件路径</th>
+                        </tr>
+                        <tr v-for="file in logInfoSelected.files" style="vertical-align: top;">
+                            <td>{{file.changeTypeStr}}</td>
+                            <td>{{file.path}}</td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -224,7 +256,10 @@
                         outputPath: "F:/happy/output"
                     }
                 ],
-                logInfos: []
+                logInfos: [],
+                logInfosHoverIndex: 0,
+                logInfo: {},
+                logInfoSelected: {}
             },
             methods: {
                 listSvnLog: function (projectSelect) {
@@ -280,12 +315,63 @@
                             console.log("close ...");
                         }
                     });
+                },
+                logInfosHover: function(index){
+                    if (this.logInfosHoverIndex !== index) {
+                        this.logInfo = this.logInfos[index];
+                        this.logInfosHoverIndex = index;
+                    }
+                },
+                selectSvnLog: function(index) {
+                    this.logInfos[index].isSelected = true;
+                    this.updateLogInfoSelected()
+                },
+                unSelectSvnLog: function(index) {
+                    this.logInfos[index].isSelected = false;
+                    this.updateLogInfoSelected()
+                },
+                updateLogInfoSelected: function () {
+                    var latestInfo = {};
+                    var files = [];
+                    for (var i = 0; i < this.logInfos.length; i++) {
+                        var curInfo = this.logInfos[i];
+                        if (curInfo.isSelected) {
+                            console.log(curInfo.revision + " is selected ...");
+
+                            if (latestInfo.revision === undefined || curInfo.revision > latestInfo.revision) {
+                                latestInfo = curInfo;
+                            }
+
+                            for (var i3 = 0; i3 < curInfo.files.length; i3++) {
+                                var curFile = curInfo.files[i3];
+                                var existsFile = null;
+                                for (var i2 = 0; i2 < files.length; i2++) {
+                                    if (files[i2].path === curFile.path) {
+                                        existsFile = curFile;
+                                        break;
+                                    }
+                                }
+
+                                console.log(existsFile);
+                                if (existsFile !== null && curFile.revision > existsFile.revision) {
+                                    // 以新版本为先
+                                    files.splice(files.indexOf(existsFile), 1);
+                                    files.push(curFile);
+                                    console.log(curFile.path + " is added ...");
+                                } else if (existsFile === null) {
+                                    files.push(curFile);
+                                    console.log(curFile.path + " is added ...");
+                                }
+                            }
+                        }
+                    }
+                    latestInfo.files = files;
+                    this.logInfoSelected = clone(latestInfo);
                 }
             },
             created: function(){
                 var userUrl = "/pack/getSvnConfig";
                 $.post(userUrl, {}, function (result) {
-                    console.log(result);
                     if (result.success) {
                         vueApp.user = result.user;
                     } else {
@@ -295,7 +381,6 @@
 
                 var configUrl = "/pack/getProjectConfig";
                 $.post(configUrl, {}, function (result) {
-                    console.log(result);
                     if (result.success) {
                         vueApp.projects = result.configs;
                         if (vueApp.projects.length > 0) {
@@ -316,34 +401,45 @@
         },
         methods: {
             testConfig: function() {
-                var url = "/pack/testSvnConfig";
                 var data = {
-                    username: this.user.username,
-                    password: this.user.password,
-                    location: this.user.location
+                    "username": this.user.username,
+                    "password": this.user.password,
+                    "location": this.user.location
                 };
-                $.post(url, {user: data}, function (result) {
-                    if (result.success) {
-                        layer.msg("测试成功！", {icon: 1});
-                    } else {
-                        layer.msg("测试失败！" + result.msg, {icon: 2});
+                $.ajax({
+                    type: "POST",
+                    url: "/pack/testSvnConfig",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.success) {
+                            layer.msg("测试成功！", {icon: 1});
+                        } else {
+                            layer.msg("测试失败！" + result.msg, {icon: 2});
+                        }
                     }
                 });
             },
             saveConfig: function() {
-                var url = "/pack/saveSvnConfig";
                 var data = {
                     username: this.user.username,
                     password: this.user.password,
                     location: this.user.location
                 };
-                $.post(url, data, function (result) {
-                    console.log(result);
-                    if (result.success) {
-                        layer.msg(result.msg, {icon: 1});
-                        vueApp.user = clone(configUserVue.user);
-                    } else {
-                        layer.msg("测试失败！" + result.msg, {icon: 2});
+                $.ajax({
+                    type: "POST",
+                    url: "/pack/saveSvnConfig",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.success) {
+                            layer.msg(result.msg, {icon: 1});
+                            vueApp.user = clone(configUserVue.user);
+                        } else {
+                            layer.msg("测试失败！" + result.msg, {icon: 2});
+                        }
                     }
                 });
             }

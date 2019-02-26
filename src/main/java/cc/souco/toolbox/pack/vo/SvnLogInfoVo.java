@@ -15,13 +15,13 @@ public class SvnLogInfoVo {
     private String author;
     @JSONField(format="yyyy-MM-dd HH:mm:ss")
     private Date date;
-    List<SvnFileInfo> files;
-
+    private List<SvnFileInfo> files;
+    boolean isSelected;
 
     public SvnLogInfoVo() {
     }
 
-    public SvnLogInfoVo(SVNLogEntry entry) {
+    public SvnLogInfoVo(String projectPrePath, SVNLogEntry entry) {
         this.revision = entry.getRevision();
         this.remark = entry.getMessage();
         this.author = entry.getAuthor();
@@ -47,7 +47,10 @@ public class SvnLogInfoVo {
                 changeType = SvnFileInfo.CHANGE_TYPE_MODIFIED;
             }
 
-            files.add(new SvnFileInfo(path.getPath(), changeType, fileType));
+            String relationPath = path.getPath();
+            if (relationPath.startsWith(projectPrePath)) {
+                files.add(new SvnFileInfo(relationPath.substring(relationPath.indexOf(projectPrePath) + projectPrePath.length()), changeType, fileType));
+            }
         }
     }
 
@@ -89,5 +92,13 @@ public class SvnLogInfoVo {
 
     public void setFiles(List<SvnFileInfo> files) {
         this.files = files;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
     }
 }
