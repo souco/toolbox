@@ -186,6 +186,10 @@ public class SvnService {
             }
 
             String path = StringKit.correctSlash(fileInfo.getPath());
+            if (path.endsWith(".java")) {
+                path = path.replace(".java", ".class");
+            }
+
             String compilePath;
             if (isStartWithJavaCodeDir(config, path)) {
                 compilePath = config.getCompilePath() + File.separator + path.substring(getJavaCodeDirLength(config, path));
