@@ -70,7 +70,36 @@ public class StringKit {
         return sb.toString();
     }
 
+    /**
+     * 移除文本首尾的斜杠或反斜杠，并修正字符串中的斜杠或反斜杠为操作系统中的目录分隔符
+     * @param content
+     * @return
+     */
+    public static String trimAndCorrectSlash(String content) {
+        String result = trimSlash(content);
+        return correctSlash(result);
+    }
+
+    /**
+     * 移除文本首尾的斜杠或反斜杠
+     * @param content
+     * @return
+     */
+    public static String trimSlash(String content) {
+        String result = removeSlashAndBackslashPrefix(content);
+        return removeSlashAndBackslashSuffix(result);
+    }
+
+    /**
+     * 移除文本首部的斜杠或反斜杠
+     * @param content
+     * @return
+     */
     public static String removeSlashAndBackslashPrefix(String content) {
+        if (StringUtils.isBlank(content)) {
+            return "";
+        }
+
         if (content.startsWith("/") || content.startsWith("\\")) {
             content = content.substring(1);
         } else {
@@ -79,7 +108,16 @@ public class StringKit {
         return removeSlashAndBackslashPrefix(content);
     }
 
+    /**
+     * 移除文本末尾的斜杠或反斜杠
+     * @param content
+     * @return
+     */
     public static String removeSlashAndBackslashSuffix(String content) {
+        if (StringUtils.isBlank(content)) {
+            return "";
+        }
+
         if (content.endsWith("/")) {
             content = content.substring(0, content.lastIndexOf("/"));
         } else if(content.endsWith("\\")) {
@@ -90,10 +128,19 @@ public class StringKit {
         return removeSlashAndBackslashSuffix(content);
     }
 
+    /**
+     * 修正字符串中的斜杠或反斜杠为操作系统中的目录分隔符
+     * @param content 文本
+     * @return 修正后的文本
+     */
     public static String correctSlash(String content) {
+        if (StringUtils.isBlank(content)) {
+            return "";
+        }
+
         if ("/".equals(File.separator)) {
             return content.replaceAll("\\\\", "/");
-        } else if ("\\\\".equals(File.separator)) {
+        } else if ("\\".equals(File.separator)) {
             return content.replaceAll("/", "\\\\");
         }
         return content;

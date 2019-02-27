@@ -1,5 +1,7 @@
 package cc.souco.toolbox.pack.vo;
 
+import cc.souco.toolbox.common.StringKit;
+
 public class SvnFileInfo {
     private String path;
     private Integer changeType;
@@ -24,7 +26,7 @@ public class SvnFileInfo {
     }
 
     public String getPath() {
-        return path;
+        return StringKit.trimAndCorrectSlash(path);
     }
 
     public void setPath(String path) {

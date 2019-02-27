@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -142,6 +143,31 @@ public class FileKit {
             throw new IllegalArgumentException("文件创建失败，文件输出路径创建失败");
         }
         return file;
+    }
+
+    /**
+     * 文件复制
+     * @param fromBasePath 被复制文件的基础路径
+     * @param toBasePath 目的文件的基础路径
+     * @param relationPath 文件的相对路径
+     * @throws IOException
+     */
+    public static void copyFile(String fromBasePath, String toBasePath, String relationPath) throws IOException {
+        File from = new File(fromBasePath + File.separator + relationPath);
+        File to = newFileSafety(toBasePath + File.separator + relationPath);
+        Files.copy(from.toPath(), to.toPath());
+    }
+
+    /**
+     * 文件复制
+     * @param fromFile 被复制的文件
+     * @param fromBasePath 被复制文件的基础路径
+     * @param toBasePath 目的文件的基础路径
+     * @throws IOException
+     */
+    public static void copyFile(File fromFile, String fromBasePath, String toBasePath) throws IOException {
+        File to = newFileSafety(fromFile.getAbsolutePath().replace(fromBasePath, toBasePath));
+        Files.copy(fromFile.toPath(), to.toPath());
     }
 
     /**

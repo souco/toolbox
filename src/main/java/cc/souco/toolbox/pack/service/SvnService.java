@@ -1,9 +1,13 @@
 package cc.souco.toolbox.pack.service;
 
+import cc.souco.toolbox.common.DateKit;
 import cc.souco.toolbox.common.FileKit;
 import cc.souco.toolbox.common.StringKit;
 import cc.souco.toolbox.pack.UseSvnKit;
-import cc.souco.toolbox.pack.vo.*;
+import cc.souco.toolbox.pack.vo.ProjectConfig;
+import cc.souco.toolbox.pack.vo.SvnFileInfo;
+import cc.souco.toolbox.pack.vo.SvnLogInfo;
+import cc.souco.toolbox.pack.vo.SvnUser;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.beust.jcommander.internal.Lists;
@@ -19,9 +23,9 @@ import org.tmatesoft.svn.core.wc.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -95,9 +99,14 @@ public class SvnService {
         SVNRevision end;
         if (null != startRevision) {
             start = SVNRevision.create(startRevision);
+        } else {
+            start = SVNRevision.create(new Date());
         }
         if (null == endRevision) {
-            end = SVNRevision.create(-1L);
+            // 当前分支最新的版本号
+            // end = svnInfo.getCommittedRevision();
+            // end = SVNRevision.create(-1L);
+            end = SVNRevision.create(0);
         } else {
             end = SVNRevision.create(endRevision);
         }
@@ -180,44 +189,61 @@ public class SvnService {
     }
 
     public void packageUpdate(SvnLogInfo info, ProjectConfig config) {
+        // 绝对路径
+        String dateTimeProjectName = DateKit.dateToMilliStr() + "_" + config.getName();
+        String finallyOutputBaseDir = config.getOutputPath() + File.separator + dateTimeProjectName;
+
         for (SvnFileInfo fileInfo : info.getFiles()) {
             if (SvnFileInfo.CHANGE_TYPE_DELETED == fileInfo.getChangeType() || SvnFileInfo.FILE_TYPE_DIR == fileInfo.getFileType()) {
+                // 删除的文件 和 文件夹，略过（文件夹会在创建子文件的时候创建）
                 continue;
             }
 
-            String path = StringKit.correctSlash(fileInfo.getPath());
-            if (path.endsWith(".java")) {
-                path = path.replace(".java", ".class");
-            }
+            String path = StringKit.trimAndCorrectSlash(fileInfo.getPath());
 
-            String compilePath;
+            // 在项目根路径下的相对路径
+            String fromRelationPath;
+            List<File> files = Lists.newArrayList();
+            String fromPath;
             if (isStartWithJavaCodeDir(config, path)) {
-                compilePath = config.getCompilePath() + File.separator + path.substring(getJavaCodeDirLength(config, path));
+                fromRelationPath = config.getCompilePath() + File.separator + StringKit.trimSlash(path.substring(getJavaCodeDirLength(config, path)));
+                if (path.endsWith(".java")) {
+                    fromRelationPath = fromRelationPath.replace(".java", ".class");
+
+                    // 检测java内部类导致的多个字节码文件
+                    fromPath = config.getLocation() + File.separator + fromRelationPath;
+                    File file = new File(fromPath);
+                    String filename = file.getName();
+                    String classFilenamePrefix = filename.substring(0, filename.lastIndexOf(".")) + "$";
+                    File[] subClassFiles = file.getParentFile().listFiles((dir, name) -> name.startsWith(classFilenamePrefix));
+                    if (subClassFiles != null && subClassFiles.length > 0) {
+                        files.addAll(Lists.newArrayList(subClassFiles));
+                    }
+                }
             } else {
-                compilePath = path;
+                fromRelationPath = path;
             }
-            String absolutePath = config.getLocation() + File.separator + path;
+            files.add(new File(config.getLocation() + File.separator + fromRelationPath));
 
-            File from = new File(absolutePath);
-            File to = new File(config.getOutputPath() + File.separator + compilePath);
-            if (!to.getParentFile().exists()) {
-                to.getParentFile().mkdirs();
-            }
-
-            // 复制文件
-            try {
-                Path copy = Files.copy(from.toPath(), to.toPath());
-                logger.info("copy :" + copy);
-            } catch (Exception e) {
-                logger.info("copy error:" + from.toPath());
-                continue;
+            for (File file : files) {
+                try {
+                    FileKit.copyFile(file, config.getLocation(), finallyOutputBaseDir);
+                    logger.info("copy success: " + fromRelationPath);
+                } catch (IOException e) {
+                    logger.error("copy error: " + fromRelationPath);
+                }
             }
         }
+        FileKit.openDirectory(finallyOutputBaseDir);
+    }
+
+    public List<String> convertToExistsFile() {
+        return Lists.newArrayList();
     }
 
     private static boolean isStartWithJavaCodeDir(ProjectConfig config, String path){
         for (String dir : config.getJavaPath()) {
-            dir = StringKit.correctSlash(StringKit.removeSlashAndBackslashPrefix(StringKit.removeSlashAndBackslashSuffix(dir)));
+            dir = StringKit.trimAndCorrectSlash(dir);
             if(path.startsWith(dir)){
                 return true;
             }
@@ -226,8 +252,8 @@ public class SvnService {
     }
 
     private static int getJavaCodeDirLength(ProjectConfig config, String path){
-        path = StringKit.correctSlash(StringKit.removeSlashAndBackslashPrefix(StringKit.removeSlashAndBackslashSuffix(path)));
         for (String dir : config.getJavaPath()) {
+            dir = StringKit.trimAndCorrectSlash(dir);
             if(path.startsWith(dir)){
                 return dir.length();
             }

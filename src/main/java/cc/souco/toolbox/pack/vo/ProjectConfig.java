@@ -1,5 +1,7 @@
 package cc.souco.toolbox.pack.vo;
 
+import cc.souco.toolbox.common.StringKit;
+
 import java.util.List;
 
 public class ProjectConfig {
@@ -18,7 +20,7 @@ public class ProjectConfig {
     }
 
     public String getLocation() {
-        return location;
+        return StringKit.trimAndCorrectSlash(location);
     }
 
     public void setLocation(String location) {
@@ -34,7 +36,7 @@ public class ProjectConfig {
     }
 
     public String getCompilePath() {
-        return compilePath;
+        return StringKit.trimAndCorrectSlash(compilePath);
     }
 
     public void setCompilePath(String compilePath) {
@@ -42,7 +44,7 @@ public class ProjectConfig {
     }
 
     public String getOutputPath() {
-        return outputPath;
+        return StringKit.trimAndCorrectSlash(outputPath);
     }
 
     public void setOutputPath(String outputPath) {
