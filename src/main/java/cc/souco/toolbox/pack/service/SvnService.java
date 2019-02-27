@@ -2,6 +2,7 @@ package cc.souco.toolbox.pack.service;
 
 import cc.souco.toolbox.common.DateKit;
 import cc.souco.toolbox.common.FileKit;
+import cc.souco.toolbox.common.PathKit;
 import cc.souco.toolbox.common.StringKit;
 import cc.souco.toolbox.pack.UseSvnKit;
 import cc.souco.toolbox.pack.vo.ProjectConfig;
@@ -13,8 +14,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.beust.jcommander.internal.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
 import org.tmatesoft.svn.core.SVNAuthenticationException;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
@@ -22,8 +23,8 @@ import org.tmatesoft.svn.core.auth.BasicAuthenticationManager;
 import org.tmatesoft.svn.core.wc.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -34,6 +35,8 @@ public class SvnService {
 
     private static Logger logger = LoggerFactory.getLogger(SvnService.class);
 
+    @Value("${user.file.prefix}")
+    private String userFilePrefix;
     /**
      * 测试svn账户信息是否正确
      * @param user svn用户信息
@@ -146,45 +149,76 @@ public class SvnService {
         return svnLogEntries;
     }
 
+    /**
+     * 从文件中读取项目配置信息，如果文件不存在，返回空列表
+     * @return 文件配置信息列表
+     */
     public List<ProjectConfig> getProjectConfigs() {
-        File projectsFile = null;
-        try {
-            projectsFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "projects.json");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        String filepath = PathKit.getSpringBootJarParentPath() + File.separator + userFilePrefix + "projects.json";
+        File file = FileKit.newFileSafety(filepath);
+        if (!file.exists()) {
+            return getProjectConfigsFromResource();
         }
-        String projectsStr = FileKit.toString(projectsFile);
+        return JSONArray.parseArray(FileKit.toString(file), ProjectConfig.class);
+    }
+    /**
+     * 从文件中读取项目配置信息，如果文件不存在，返回空列表
+     * @return 文件配置信息列表
+     */
+    public List<ProjectConfig> getProjectConfigsFromResource() {
+        String projectsStr;
+        try {
+            InputStream resourceStream = this.getClass().getClassLoader().getResourceAsStream("projects.json");
+            projectsStr = FileKit.inputStream2String(resourceStream);
+            if (resourceStream != null) {
+                resourceStream.close();
+            }
+        } catch (Exception e) {
+            return Lists.newArrayList();
+        }
         return JSONArray.parseArray(projectsStr, ProjectConfig.class);
     }
 
     public void saveProjectConfigs(List<ProjectConfig> configs) {
-        File projectsFile = null;
-        try {
-            projectsFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "projects.json");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        FileKit.toFile(projectsFile, JSONArray.toJSONString(configs));
+        String filepath = PathKit.getSpringBootJarParentPath() + File.separator + userFilePrefix + "projects.json";
+        File file = FileKit.newFileSafety(filepath);
+        FileKit.toFile(file, JSONArray.toJSONString(configs));
     }
 
+    /**
+     * 从文件中读取SVN配置信息，如果文件不存在，返回新建对象
+     * @return
+     */
     public SvnUser getSvnUser() {
-        File userJsonFile = null;
-        try {
-            userJsonFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "svn.json");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        String filepath = PathKit.getSpringBootJarParentPath() + File.separator + userFilePrefix + "svn.json";
+        File file = FileKit.newFileSafety(filepath);
+        if (!file.exists()) {
+            return getSvnUserFromResource();
         }
-        String userJsonStr = FileKit.toString(userJsonFile);
-        return JSON.parseObject(userJsonStr, SvnUser.class);
+        return JSON.parseObject(FileKit.toString(file), SvnUser.class);
+    }
+
+    /**
+     * 从文件中读取SVN配置信息，如果文件不存在，返回新建对象
+     * @return
+     */
+    public SvnUser getSvnUserFromResource() {
+        String userJsonString;
+        try {
+            InputStream resourceStream = this.getClass().getClassLoader().getResourceAsStream("svn.json");
+            userJsonString = FileKit.inputStream2String(resourceStream);
+            if (resourceStream != null) {
+                resourceStream.close();
+            }
+        } catch (Exception e) {
+            return new SvnUser();
+        }
+        return JSON.parseObject(userJsonString, SvnUser.class);
     }
 
     public void saveSvnUser(SvnUser user) {
-        File svnUserFile = null;
-        try {
-            svnUserFile = ResourceUtils.getFile(ResourceUtils.CLASSPATH_URL_PREFIX + "svn.json");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        String svnFilename = PathKit.getSpringBootJarParentPath() + File.separator + userFilePrefix + "svn.json";
+        File svnUserFile = FileKit.newFileSafety(svnFilename);
         FileKit.toFile(svnUserFile, JSONArray.toJSONString(user));
     }
 

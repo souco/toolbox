@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -195,6 +196,17 @@ public class FileKit {
                 runtime.runFinalization();
             }
         }
+    }
+
+    public static String inputStream2String(InputStream is) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+        StringBuilder buffer = new StringBuilder();
+        String line;
+        while ((line = in.readLine()) != null){
+            buffer.append(line);
+        }
+        in.close();
+        return buffer.toString();
     }
 
     public static void main(String[] args) {
