@@ -10,7 +10,7 @@
     <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
     <script type="text/javascript" src="/third-party/vue/vue.js"></script>
     <script type="text/javascript" src="/third-party/layer/layer.js"></script>
-    <title>项目文件提取</title>
+    <title>项目文件提取打包</title>
 </head>
 <body>
 <header th:include="common/header :: header"></header>
@@ -52,10 +52,10 @@
                 <table class="table table-hover">
                     <thead>
                     <tr class="text-center">
-                        <th class="text-center">版本号</th>
+                        <th class="text-center">版本</th>
                         <th class="text-center">提交时间</th>
                         <th class="text-center">提交人</th>
-                        <th class="text-center">操作</th>
+                        <th class="text-center" style="padding-left: 0; padding-right:0;">操作</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -63,15 +63,19 @@
                         <td class="align-middle">#{{logInfo.revision}}</td>
                         <td class="align-middle">{{logInfo.date}}</td>
                         <td class="align-middle">{{logInfo.author}}</td>
-                        <td>
+                        <td style="padding-left: 0; padding-right:0;">
                             <button v-if="!logInfo.isSelected" class="btn-sm btn-outline-success" @click="selectSvnLog(index)">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
                             <button v-if="logInfo.isSelected" class="btn-sm btn-outline-danger" @click="unSelectSvnLog(index)">取消 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
                         </td>
                     </tr>
                     <tr v-if="logInfos.length <= 0">
-                        <td colspan="3" class="text-center">
-                            <span v-if="searchText==''">正在努力的加载数据...</span>
-                            <span v-if="searchText!=''"><label>{{searchText}}</label> 无匹配数据.</span>
+                        <td colspan="4" class="text-center">
+                            <button class="btn btn-outline-success form-control" @click="listSvnLog(projectSelect)" style=""><i class="fa fa-search" aria-hidden="true"></i> 查询提交记录</button>
+                        </td>
+                    </tr>
+                    <tr v-if="logInfos.length > 0 && !isLastLogInfo">
+                        <td colspan="4" class="text-center">
+                            <button class="btn btn-outline-success form-control" @click="listMoreLogInfo()" style=""><i class="fa fa-circle-o-notch" aria-hidden="true"></i> 加载更多</button>
                         </td>
                     </tr>
                     </tbody>
@@ -222,6 +226,13 @@
                     <input type="text" class="form-control" id="projectOutputPath" v-model="project.outputPath" placeholder="如 F:/project/output">
                 </div>
             </div>
+            <div class="form-group row">
+                <span for="projectSelect" class="col-sm-3 control-label m-auto text-right">打包后打开文件夹：</span>
+                <div class="col-sm-9">
+                    <input type="checkbox" class="" id="openDir" v-model="project.openDir" value="true">
+                    <label for="openDir">打开</label>
+                </div>
+            </div>
         </form>
     </div>
 </div>
@@ -242,32 +253,26 @@
                     password: '123',
                     location: "G:/code/project"
                 },
-                projectSelect: "",
+                projectSelect: null,
                 projects: [
                     {
-                        name: '四川审批',
-                        location: 'D:/code/sc_sp',
+                        name: '项目名称',
+                        location: '项目路径',
                         javaPath: [
-                            "src",
+                            "src1",
                             "src2"
                         ],
                         compilePath: "",
-                        outputPath: ""
-                    }, {
-                        name: '开心项目',
-                        location: 'F:/happy/project',
-                        javaPath: [
-                            "src",
-                            "src3"
-                        ],
-                        compilePath: "/WebRoot/WEB-INF/classes",
-                        outputPath: "F:/happy/output"
+                        outputPath: "",
+                        isLastPack: false,
+                        openDir: false
                     }
                 ],
                 logInfos: [],
                 logInfosHoverIndex: 0,
                 logInfo: {},
-                logInfoSelected: {}
+                logInfoSelected: {},
+                isLastLogInfo: false
             },
             methods: {
                 listSvnLog: function (projectSelect) {
@@ -275,6 +280,12 @@
                     $.post(url, {projectSelect: projectSelect}, function (result) {
                         if (result.success) {
                             vueApp.logInfos = result.infos;
+
+                            if (result.infos.length < 10) {
+                                vueApp.isLastLogInfo = true;
+                            } else {
+                                vueApp.isLastLogInfo = false;
+                            }
                         } else {
                             layer.msg("测试失败！" + result.msg, {icon: 2});
                         }
@@ -312,7 +323,7 @@
                     layer.open({
                         type: 1,
                         title: "配置项目信息",
-                        area: ["800px", "500px"],
+                        area: ["800px", "550px"],
                         content: $("#svnProject"),
                         btn: ["保存", "取消"],
                         btn1: function (index) {
@@ -320,7 +331,6 @@
                             layer.close(index);
                         },
                         btn2: function () {
-                            console.log("close ...");
                         }
                     });
                 },
@@ -344,8 +354,6 @@
                     for (var i = 0; i < this.logInfos.length; i++) {
                         var curInfo = this.logInfos[i];
                         if (curInfo.isSelected) {
-                            console.log(curInfo.revision + " is selected ...");
-
                             if (latestInfo.revision === undefined || curInfo.revision > latestInfo.revision) {
                                 latestInfo = clone(curInfo);
                             }
@@ -378,7 +386,6 @@
                         config: this.projects[this.projectSelect],
                         info: logInfoSelected
                     };
-                    console.log(data);
                     $.ajax({
                         type: "POST",
                         url: "/pack/packageUpdate",
@@ -391,6 +398,29 @@
                             } else {
                                 layer.msg("打包失败！" + result.msg, {icon: 2});
                             }
+                        }
+                    });
+                },
+                listMoreLogInfo: function(){
+                    var data = {
+                        projectSelect: vueApp.projectSelect,
+                        lastRevision: vueApp.logInfos[vueApp.logInfos.length - 1].revision - 1
+                    };
+                    $.post("/pack/listMoreSvnLog", data, function (result) {
+                        console.log(result);
+                        if (result.success) {
+                            console.log(result.infos);
+                            if (result.infos !== undefined && result.infos.length > 0) {
+                                for (var i = 0; i < result.infos.length; i++) {
+                                    vueApp.logInfos.push(result.infos[i]);
+                                }
+                            }
+
+                            if (result.infos.length < 10) {
+                                vueApp.isLastLogInfo = true;
+                            }
+                        } else {
+                            layer.msg("打包失败！" + result.msg, {icon: 2});
                         }
                     });
                 }
@@ -409,7 +439,15 @@
                 $.post(configUrl, {}, function (result) {
                     if (result.success) {
                         vueApp.projects = result.configs;
-                        if (vueApp.projects.length > 0) {
+                        for (var i = 0; i < vueApp.projects.length; i++) {
+                            if (vueApp.projects[i].isLastPack) {
+                                vueApp.projectSelect = i;
+                                break;
+                            }
+                        }
+
+                        // 无上次最后打开，则选择第一个
+                        if (null === vueApp.projectSelect && vueApp.projects.length > 0) {
                             vueApp.projectSelect = 0;
                         }
                     } else {

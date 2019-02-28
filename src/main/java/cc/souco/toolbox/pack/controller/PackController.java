@@ -92,21 +92,28 @@ public class PackController {
     public Ret listSvnLog(Integer projectSelect){
         Ret ret = Ret.ok();
         try {
-            ProjectConfig config;
-            SvnUser user = svnService.getSvnUser();
-            List<ProjectConfig> configs = svnService.getProjectConfigs();
-            if (configs != null && !configs.isEmpty()) {
-                config = configs.get(projectSelect);
-            } else {
-                throw new RuntimeException("请先选择或配置项目信息！");
-            }
-
-            if (user == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
-                throw new RuntimeException("请先选择或配置SVN账户信息！");
-            }
+            SvnUser user = svnService.getCurSvnUser();
+            ProjectConfig config = svnService.getCurProjectConfigs(projectSelect);
 
             List<SvnLogInfo> infos = svnService.findSvnLog(user, config.getLocation(), null, null, 10);
             ret.set("msg", "保存成功").set("infos", infos);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ret.setFail(e.getMessage());
+        }
+        return ret;
+    }
+
+    @ResponseBody
+    @RequestMapping("/listMoreSvnLog")
+    public Ret listMoreSvnLog(Long lastRevision, Integer projectSelect){
+        Ret ret = Ret.ok();
+        try {
+            SvnUser user = svnService.getCurSvnUser();
+            ProjectConfig config = svnService.getCurProjectConfigs(projectSelect);
+
+            List<SvnLogInfo> infos = svnService.findSvnLog(user, config.getLocation(), lastRevision, null, 10);
+            ret.set("infos", infos);
         } catch (Exception e) {
             e.printStackTrace();
             return ret.setFail(e.getMessage());

@@ -12,6 +12,7 @@ import cc.souco.toolbox.pack.vo.SvnUser;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.beust.jcommander.internal.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -153,6 +154,18 @@ public class SvnService {
      * 从文件中读取项目配置信息，如果文件不存在，返回空列表
      * @return 文件配置信息列表
      */
+    public ProjectConfig getCurProjectConfigs(Integer projectSelect) {
+        List<ProjectConfig> configs = getProjectConfigs();
+        if (configs == null || configs.isEmpty()) {
+            throw new RuntimeException("请先选择或配置项目信息！");
+        }
+        return configs.get(projectSelect);
+    }
+
+    /**
+     * 从文件中读取项目配置信息，如果文件不存在，返回空列表
+     * @return 文件配置信息列表
+     */
     public List<ProjectConfig> getProjectConfigs() {
         String filepath = PathKit.getSpringBootJarParentPath() + File.separator + userFilePrefix + "projects.json";
         File file = FileKit.newFileSafety(filepath);
@@ -161,6 +174,7 @@ public class SvnService {
         }
         return JSONArray.parseArray(FileKit.toString(file), ProjectConfig.class);
     }
+
     /**
      * 从文件中读取项目配置信息，如果文件不存在，返回空列表
      * @return 文件配置信息列表
@@ -202,6 +216,18 @@ public class SvnService {
      * 从文件中读取SVN配置信息，如果文件不存在，返回新建对象
      * @return
      */
+    public SvnUser getCurSvnUser() {
+        SvnUser user = getSvnUser();
+        if (user == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
+            throw new RuntimeException("请先选择或配置SVN账户信息！");
+        }
+        return user;
+    }
+
+    /**
+     * 从文件中读取SVN配置信息，如果文件不存在，返回新建对象
+     * @return
+     */
     public SvnUser getSvnUserFromResource() {
         String userJsonString;
         try {
@@ -222,14 +248,24 @@ public class SvnService {
         FileKit.toFile(svnUserFile, JSONArray.toJSONString(user));
     }
 
+    /**
+     * 打包更新包
+     * @param info 打包的版本及文件信息
+     * @param config 打包的项目配置信息
+     */
     public void packageUpdate(SvnLogInfo info, ProjectConfig config) {
         // 绝对路径
         String dateTimeProjectName = DateKit.dateToMilliStr() + "_" + config.getName();
         String finallyOutputBaseDir = config.getOutputPath() + File.separator + dateTimeProjectName;
 
+        StringBuilder all = new StringBuilder();
+        StringBuilder failure = new StringBuilder();
+        StringBuilder delete = new StringBuilder();
+        StringBuilder success = new StringBuilder();
+
         for (SvnFileInfo fileInfo : info.getFiles()) {
-            if (SvnFileInfo.CHANGE_TYPE_DELETED == fileInfo.getChangeType() || SvnFileInfo.FILE_TYPE_DIR == fileInfo.getFileType()) {
-                // 删除的文件 和 文件夹，略过（文件夹会在创建子文件的时候创建）
+            // 文件夹，略过（文件夹会在创建子文件的时候创建）
+            if (SvnFileInfo.FILE_TYPE_DIR == fileInfo.getFileType()) {
                 continue;
             }
 
@@ -239,8 +275,8 @@ public class SvnService {
             String fromRelationPath;
             List<File> files = Lists.newArrayList();
             String fromPath;
-            if (isStartWithJavaCodeDir(config, path)) {
-                fromRelationPath = config.getCompilePath() + File.separator + StringKit.trimSlash(path.substring(getJavaCodeDirLength(config, path)));
+            if (config.isStartWithJavaCodeDir(path)) {
+                fromRelationPath = config.getCompilePath() + File.separator + StringKit.trimSlash(path.substring(config.getJavaCodeDirLength(path)));
                 if (path.endsWith(".java")) {
                     fromRelationPath = fromRelationPath.replace(".java", ".class");
 
@@ -257,41 +293,80 @@ public class SvnService {
             } else {
                 fromRelationPath = path;
             }
-            files.add(new File(config.getLocation() + File.separator + fromRelationPath));
+            files.add(0, new File(config.getLocation() + File.separator + fromRelationPath));
+
+            // 删除的文件，记录，然后跳过
+            if (SvnFileInfo.CHANGE_TYPE_DELETED == fileInfo.getChangeType()) {
+                delete.append(fileInfo.getChangeTypeStr()).append(" ").append(fromRelationPath).append("\r\n");
+                continue;
+            }
 
             for (File file : files) {
                 try {
                     FileKit.copyFile(file, config.getLocation(), finallyOutputBaseDir);
                     logger.info("copy success: " + fromRelationPath);
+                    success.append(fileInfo.getChangeTypeStr()).append(" ").append(file.getAbsolutePath().substring(config.getLocation().length())).append("\r\n");
                 } catch (IOException e) {
                     logger.error("copy error: " + fromRelationPath);
+                    failure.append(fileInfo.getChangeTypeStr()).append(" ").append(fromRelationPath).append("\r\n");
                 }
             }
         }
-        FileKit.openDirectory(finallyOutputBaseDir);
+
+        // 生成打包信息
+        all.append("最新版本号：").append(info.getRevision()).append("\r\n")
+                .append("最新提交人：").append(info.getAuthor()).append("\r\n")
+                .append("最后提交时间：").append(DateKit.format(info.getDate(), DateKit.DATE_TIME_FORMAT)).append("\r\n")
+                .append("最后提交说明：").append(info.getRemark()).append("\r\n")
+                .append("更新包打包时间：").append(DateKit.format(DateKit.DATE_TIME_FORMAT)).append("\r\n");
+
+        all.append("\r\n").append("打包失败的文件：").append("\r\n");
+        if (failure.length() > 0) {
+            all.append(failure);
+        } else {
+            all.append("无").append("\r\n");
+        }
+
+        all.append("\r\n").append("已被删除的文件：").append("\r\n");
+        if (delete.length() > 0) {
+            all.append(delete);
+        } else {
+            all.append("无").append("\r\n");
+        }
+
+        all.append("\r\n").append("打包成功的文件：").append("\r\n");
+        if (success.length() > 0) {
+            all.append(success);
+        } else {
+            all.append("无").append("\r\n");
+        }
+
+        FileKit.toFile(finallyOutputBaseDir + File.separator + "更新说明.txt", all.toString());
+
+        // 如果配置了打包后打开文件夹，则打开文件夹
+        if (config.getOpenDir()) {
+            FileKit.openDirectory(finallyOutputBaseDir);
+        }
+
+        // 更新最后打包记录
+        updateLastPackProjectConfig(config);
     }
 
-    public List<String> convertToExistsFile() {
-        return Lists.newArrayList();
-    }
-
-    private static boolean isStartWithJavaCodeDir(ProjectConfig config, String path){
-        for (String dir : config.getJavaPath()) {
-            dir = StringKit.trimAndCorrectSlash(dir);
-            if(path.startsWith(dir)){
-                return true;
+    /**
+     * 更新最后打包的配置信息
+     * @param lastPackConfig 最后一次打包的配置
+     */
+    private void updateLastPackProjectConfig(ProjectConfig lastPackConfig) {
+        List<ProjectConfig> configs = getProjectConfigs();
+        boolean hashMark = false;
+        for (ProjectConfig config : configs) {
+            if (!hashMark && config.equals(lastPackConfig)) {
+                config.setIsLastPack(true);
+                hashMark = true;
+            } else {
+                config.setIsLastPack(false);
             }
         }
-        return false;
-    }
-
-    private static int getJavaCodeDirLength(ProjectConfig config, String path){
-        for (String dir : config.getJavaPath()) {
-            dir = StringKit.trimAndCorrectSlash(dir);
-            if(path.startsWith(dir)){
-                return dir.length();
-            }
-        }
-        throw new RuntimeException();
+        saveProjectConfigs(configs);
     }
 }
