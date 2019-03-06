@@ -253,7 +253,7 @@ public class SvnService {
      * @param info 打包的版本及文件信息
      * @param config 打包的项目配置信息
      */
-    public void packageUpdate(SvnLogInfo info, ProjectConfig config) {
+    public List<ProjectConfig> packageUpdate(SvnLogInfo info, ProjectConfig config) {
         // 绝对路径
         String dateTimeProjectName = DateKit.dateToMilliStr() + "_" + config.getName();
         String finallyOutputBaseDir = config.getOutputPath() + File.separator + dateTimeProjectName;
@@ -349,18 +349,20 @@ public class SvnService {
         }
 
         // 更新最后打包记录
-        updateLastPackProjectConfig(config);
+        config.setLastPackRevision(info.getRevision());
+        return updateLastPackProjectConfig(config);
     }
 
     /**
      * 更新最后打包的配置信息
      * @param lastPackConfig 最后一次打包的配置
      */
-    private void updateLastPackProjectConfig(ProjectConfig lastPackConfig) {
+    private List<ProjectConfig> updateLastPackProjectConfig(ProjectConfig lastPackConfig) {
         List<ProjectConfig> configs = getProjectConfigs();
         boolean hashMark = false;
         for (ProjectConfig config : configs) {
             if (!hashMark && config.equals(lastPackConfig)) {
+                config.setLastPackRevision(lastPackConfig.getLastPackRevision());
                 config.setIsLastPack(true);
                 hashMark = true;
             } else {
@@ -368,5 +370,6 @@ public class SvnService {
             }
         }
         saveProjectConfigs(configs);
+        return configs;
     }
 }

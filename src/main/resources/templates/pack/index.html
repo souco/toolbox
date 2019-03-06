@@ -20,21 +20,6 @@
         <a class="btn-sm btn-primary" v-on:click="configUser(user)"><i class="fa fa-cog" aria-hidden="true"></i> SVN：{{user.username}}</a>
     </div>
     <div class="container-fluid">
-        <!--<div class="row">
-            <div class="col">
-                <div class="input-group schema-search-div" style="width: 33%; padding:15px 15px 15px 0;">
-                    <select id="projectSelect" v-model:value="projectSelect" class="input-group form-control">
-                        <option v-for="(project, index) in projects" v-bind:value="index">
-                            {{ project.name }} [{{ project.location }}]
-                        </option>
-                    </select>
-                    <div class="btn-group input-group-append">
-                        <button class="btn btn-success" @click="listSvnLog(projectSelect)" style=""><i class="fa fa-search" aria-hidden="true"></i></button>
-                        <button class="btn btn-primary" @click="configProject(projects, projectSelect)" style=""><i class="fa fa-wrench" aria-hidden="true"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>-->
         <!--版本列表-->
         <div class="row">
             <div class="col-lg-4 col-md-4">
@@ -45,8 +30,7 @@
                         </option>
                     </select>
                     <div class="btn-group input-group-append">
-                        <button class="btn btn-success" @click="listSvnLog(projectSelect)" style=""><i class="fa fa-search" aria-hidden="true"></i></button>
-                        <button class="btn btn-primary" @click="configProject(projects, projectSelect)" style=""><i class="fa fa-wrench" aria-hidden="true"></i></button>
+                        <button class="btn btn-outline-primary" @click="configProject(projects, projectSelect)" style=""><i class="fa fa-wrench" aria-hidden="true"></i> </button>
                     </div>
                 </div>
                 <table class="table table-hover">
@@ -64,8 +48,9 @@
                         <td class="align-middle">{{logInfo.date}}</td>
                         <td class="align-middle">{{logInfo.author}}</td>
                         <td style="padding-left: 0; padding-right:0;">
-                            <button v-if="!logInfo.isSelected" class="btn-sm btn-outline-success" @click="selectSvnLog(index)">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
-                            <button v-if="logInfo.isSelected" class="btn-sm btn-outline-danger" @click="unSelectSvnLog(index)">取消 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
+                            <button v-if="!logInfo.isSelected && logInfo.revision <= projects[projectSelect].lastPackRevision" class="btn-sm btn-outline-primary" @click="selectSvnLog(index)">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
+                            <button v-if="!logInfo.isSelected && logInfo.revision > projects[projectSelect].lastPackRevision" class="btn-sm btn-outline-success" @click="selectSvnLog(index)" title="上次打包之后的新提交">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
+                            <button v-if="logInfo.isSelected" class="btn-sm btn-outline-danger" @click="unSelectSvnLog(index)">取消 <i class="fa fa-chevron-left" aria-hidden="true"></i></button>
                         </td>
                     </tr>
                     <tr v-if="logInfos.length <= 0">
@@ -84,7 +69,9 @@
 
             <!-- 版本详情 -->
             <div class="col-lg-4 col-md-4">
-                <div style="height: 53px;"></div>
+                <div class="" style="height: 53px;">
+                    <button v-if="projects.length > 0 && projects[projectSelect].lastPackRevision != undefined" class="btn btn-outline-success form-control" @click="fastPackageUpdate(logInfoSelected)" style=""><i class="fa fa-rocket" aria-hidden="true"></i> 快速打包</button>
+                </div>
                 <div v-if="logInfo != null && logInfo.revision != undefined" style="border: 1px solid #dee2e6; padding: 0 10px 10px 10px;">
                     <div style="line-height: 24px; font-weight: bold; text-align: center; border-bottom: solid 2px #dee2e6; padding: 12px; margin-bottom: 12px;">
                         <span>#{{logInfo.revision}}版本信息</span>
@@ -113,7 +100,7 @@
             <div class="col-lg-4 col-md-4">
                 <div v-if="logInfoSelected != null && logInfoSelected.revision != undefined">
                     <div class="" style="height: 53px;">
-                        <button class="btn btn-success form-control" @click="packageUpdate(logInfoSelected)" style=""><i class="fa fa-archive" aria-hidden="true"></i> 打包</button>
+                        <button class="btn btn-outline-primary form-control" @click="packageUpdate(logInfoSelected)" style=""><i class="fa fa-send-o" aria-hidden="true"></i> 打包</button>
                     </div>
                     <div style="border: 1px solid #dee2e6; padding: 0 10px 10px 10px;">
                         <div style="line-height: 24px; font-weight: bold; text-align: center; border-bottom: solid 2px #dee2e6; padding: 12px; margin-bottom: 12px;">
@@ -227,6 +214,13 @@
                 </div>
             </div>
             <div class="form-group row">
+                <span for="lastPackRevision" class="col-sm-3 control-label m-auto text-right">上一次打包版本号：</span>
+                <div class="col-sm-9 input-group">
+                    <span class="input-group-prepend btn btn-light">#</span>
+                    <input type="text" class="form-control" id="lastPackRevision" v-model="project.lastPackRevision" disabled="disabled" placeholder="">
+                </div>
+            </div>
+            <div class="form-group row">
                 <span for="projectSelect" class="col-sm-3 control-label m-auto text-right">打包后打开文件夹：</span>
                 <div class="col-sm-9">
                     <input type="checkbox" class="" id="openDir" v-model="project.openDir" value="true">
@@ -242,32 +236,9 @@
         vueApp = new Vue({
             el: "#appDiv",
             data: {
-                message: 'hello, souco ,this is vue!',
-                hasSchemas: false,
-                schemasShow: [],
-                schemasSelect: [],
-                schemas: [],
-                searchText: '',
-                user: {
-                    username: 'souco',
-                    password: '123',
-                    location: "G:/code/project"
-                },
+                user: {},
                 projectSelect: null,
-                projects: [
-                    {
-                        name: '项目名称',
-                        location: '项目路径',
-                        javaPath: [
-                            "src1",
-                            "src2"
-                        ],
-                        compilePath: "",
-                        outputPath: "",
-                        isLastPack: false,
-                        openDir: false
-                    }
-                ],
+                projects: [],
                 logInfos: [],
                 logInfosHoverIndex: 0,
                 logInfo: {},
@@ -275,11 +246,23 @@
                 isLastLogInfo: false
             },
             methods: {
+                /**
+                 * 获取提交记录列表
+                 * @param projectSelect 选择的项目配置列表的索引
+                 */
                 listSvnLog: function (projectSelect) {
                     var url = "/pack/listSvnLog";
                     $.post(url, {projectSelect: projectSelect}, function (result) {
                         if (result.success) {
                             vueApp.logInfos = result.infos;
+
+                            // 重置已选择的版本
+                            vueApp.logInfoSelected = {};
+                            if (vueApp.logInfos.length > 0) {
+                                // 重置中部版本信息为第一个版本信息
+                                vueApp.logInfosHoverIndex = 0;
+                                vueApp.logInfo = vueApp.logInfos[vueApp.logInfosHoverIndex];
+                            }
 
                             if (result.infos.length < 10) {
                                 vueApp.isLastLogInfo = true;
@@ -287,7 +270,7 @@
                                 vueApp.isLastLogInfo = false;
                             }
                         } else {
-                            layer.msg("测试失败！" + result.msg, {icon: 2});
+                            layer.msg("获取提交记录失败！" + result.msg, {icon: 2});
                         }
                     });
                 },
@@ -395,11 +378,37 @@
                         success: function (result) {
                             if (result.success) {
                                 layer.msg("打包完毕！", {icon: 1});
+                                vueApp.projects = result.projects;
                             } else {
                                 layer.msg("打包失败！" + result.msg, {icon: 2});
                             }
                         }
                     });
+                },
+                fastPackageUpdate: function(){
+                    if(this.projects.length < 1 || this.projects[this.projectSelect] == undefined || this.projects[this.projectSelect].lastPackRevision == undefined) {
+                        layer.msg("无上次打包版本，快速打包失败！", {icon: 2});
+                        return;
+                    }
+
+                    var newRevisionCount = 0;
+                    for (var i = 0; i < this.logInfos.length; i++) {
+                        var curInfo = this.logInfos[i];
+                        if (curInfo.revision > this.projects[this.projectSelect].lastPackRevision) {
+                            curInfo.isSelected = true;
+                            newRevisionCount ++;
+                        } else {
+                            curInfo.isSelected = false;
+                        }
+                    }
+
+                    this.updateLogInfoSelected();
+
+                    if (newRevisionCount > 0) {
+                        this.packageUpdate(this.logInfoSelected);
+                    } else {
+                        layer.msg("继上次打包后无更新版本，快速打包失败。<br/>请选择需要打包的版本进行打包。", {icon: 2});
+                    }
                 },
                 listMoreLogInfo: function(){
                     var data = {
@@ -407,9 +416,7 @@
                         lastRevision: vueApp.logInfos[vueApp.logInfos.length - 1].revision - 1
                     };
                     $.post("/pack/listMoreSvnLog", data, function (result) {
-                        console.log(result);
                         if (result.success) {
-                            console.log(result.infos);
                             if (result.infos !== undefined && result.infos.length > 0) {
                                 for (var i = 0; i < result.infos.length; i++) {
                                     vueApp.logInfos.push(result.infos[i]);
@@ -423,6 +430,11 @@
                             layer.msg("打包失败！" + result.msg, {icon: 2});
                         }
                     });
+                }
+            },
+            watch: {
+                projectSelect: function(projectSelect){
+                    this.listSvnLog(projectSelect)
                 }
             },
             created: function(){

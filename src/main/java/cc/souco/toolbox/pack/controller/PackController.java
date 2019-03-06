@@ -126,8 +126,8 @@ public class PackController {
     public Ret packageUpdate(@RequestBody PackageParameterVo packageVo){
         Ret ret = Ret.ok();
         try {
-            svnService.packageUpdate(packageVo.getInfo(), packageVo.getConfig());
-            ret.set("msg", "保存成功");
+            List<ProjectConfig> configs = svnService.packageUpdate(packageVo.getInfo(), packageVo.getConfig());
+            ret.set("msg", "保存成功").set("projects", configs);
         } catch (Exception e) {
             e.printStackTrace();
             return ret.setFail(e.getMessage());

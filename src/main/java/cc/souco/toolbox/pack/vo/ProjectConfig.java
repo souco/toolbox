@@ -12,6 +12,7 @@ public class ProjectConfig {
     private List<String> javaPath;
     private String compilePath;
     private String outputPath;
+    private Long lastPackRevision;
     private boolean isLastPack;
     private boolean openDir;
 
@@ -74,6 +75,14 @@ public class ProjectConfig {
 
     public void setOpenDir(boolean openDir) {
         this.openDir = openDir;
+    }
+
+    public Long getLastPackRevision() {
+        return lastPackRevision;
+    }
+
+    public void setLastPackRevision(Long lastPackRevision) {
+        this.lastPackRevision = lastPackRevision;
     }
 
     @Override
