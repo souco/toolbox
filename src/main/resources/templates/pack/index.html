@@ -11,6 +11,32 @@
     <script type="text/javascript" src="/third-party/vue/vue.js"></script>
     <script type="text/javascript" src="/third-party/layer/layer.js"></script>
     <title>项目文件提取打包</title>
+
+    <style>
+        .self-checkbox {
+            display: none;
+        }
+
+        .self-checkbox + label {
+            background-color: white;
+            border-radius: 5px;
+            border:1px solid #d3d3d3;
+            width:20px;
+            height:20px;
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            line-height: 20px;
+        }
+
+        .self-checkbox:checked + label {
+            background-color: #eee;
+        }
+
+        .self-checkbox:checked + label:after {
+            content:"\2714";
+        }
+    </style>
 </head>
 <body>
 <header th:include="common/header :: header"></header>
@@ -106,10 +132,21 @@
                         <div style="line-height: 24px; font-weight: bold; text-align: center; border-bottom: solid 2px #dee2e6; padding: 12px; margin-bottom: 12px;">
                             <span>打包相关信息</span>
                         </div>
-                        <span>最新版本号：#{{logInfoSelected.revision}}</span><br/>
                         <span>最新提交人：{{logInfoSelected.author}}</span><br/>
-                        <span>最后提交时间：{{logInfoSelected.date}}</span><br/>
-                        <span>最后提交说明：{{logInfoSelected.remark}}</span><br/>
+                        <span>最新提交时间：{{logInfoSelected.date}}</span><br/>
+                        <br/>
+                        <span>涉及版本：</span>
+                        <table style="table-layout: fixed; word-wrap: break-word; width: 100%; max-width: 100%;">
+                            <tr>
+                                <th style="width: 15%;">版本</th>
+                                <th style="width: 85%;">提交说明</th>
+                            </tr>
+                            <tr v-for="(info, index) in logInfoSelected.infos" style="vertical-align: top;">
+                                <td>#{{info.revision}}</td>
+                                <td>{{info.remark}}</td>
+                            </tr>
+                        </table>
+                        <br/>
                         <span>打包涉及文件：</span>
                         <table style="table-layout: fixed; word-wrap: break-word; width: 100%; max-width: 100%;">
                             <tr>
@@ -217,14 +254,23 @@
                 <span for="lastPackRevision" class="col-sm-3 control-label m-auto text-right">上一次打包版本号：</span>
                 <div class="col-sm-9 input-group">
                     <span class="input-group-prepend btn btn-light">#</span>
-                    <input type="text" class="form-control" id="lastPackRevision" v-model="project.lastPackRevision" disabled="disabled" placeholder="">
+                    <input type="text" class="form-control" id="lastPackRevision" v-model="project.lastPackRevision" placeholder="未有打包记录">
                 </div>
             </div>
             <div class="form-group row">
-                <span for="projectSelect" class="col-sm-3 control-label m-auto text-right">打包后打开文件夹：</span>
+                <div class="col-sm-3">
+                </div>
                 <div class="col-sm-9">
-                    <input type="checkbox" class="" id="openDir" v-model="project.openDir" value="true">
-                    <label for="openDir">打开</label>
+                    <label>
+                        <input type="checkbox" class="self-checkbox" id="isNeedZip" v-model="project.isNeedZip" value="true">
+                        <label for="isNeedZip"></label>
+                        打包后压缩文件夹
+                    </label>
+                    <label style="margin-left: 20px;">
+                        <input type="checkbox" class="self-checkbox" id="openDir" v-model="project.openDir" value="true">
+                        <label for="openDir"></label>
+                        打包后打开文件夹
+                    </label>
                 </div>
             </div>
         </form>
@@ -243,7 +289,8 @@
                 logInfosHoverIndex: 0,
                 logInfo: {},
                 logInfoSelected: {},
-                isLastLogInfo: false
+                isLastLogInfo: false,
+                recursionDepth: 0
             },
             methods: {
                 /**
@@ -306,7 +353,7 @@
                     layer.open({
                         type: 1,
                         title: "配置项目信息",
-                        area: ["800px", "550px"],
+                        area: ["800px", "600px"],
                         content: $("#svnProject"),
                         btn: ["保存", "取消"],
                         btn1: function (index) {
@@ -334,9 +381,12 @@
                 updateLogInfoSelected: function () {
                     var latestInfo = {};
                     var files = [];
+                    var infos = [];
                     for (var i = 0; i < this.logInfos.length; i++) {
                         var curInfo = this.logInfos[i];
                         if (curInfo.isSelected) {
+                            infos.push(curInfo);
+
                             if (latestInfo.revision === undefined || curInfo.revision > latestInfo.revision) {
                                 latestInfo = clone(curInfo);
                             }
@@ -362,6 +412,7 @@
                         }
                     }
                     latestInfo.files = files;
+                    latestInfo.infos = infos;
                     this.logInfoSelected = clone(latestInfo);
                 },
                 packageUpdate: function(logInfoSelected){
@@ -385,29 +436,82 @@
                         }
                     });
                 },
+                /**
+                 * 快速打包
+                 */
                 fastPackageUpdate: function(){
                     if(this.projects.length < 1 || this.projects[this.projectSelect] == undefined || this.projects[this.projectSelect].lastPackRevision == undefined) {
                         layer.msg("无上次打包版本，快速打包失败！", {icon: 2});
                         return;
                     }
 
-                    var newRevisionCount = 0;
-                    for (var i = 0; i < this.logInfos.length; i++) {
-                        var curInfo = this.logInfos[i];
-                        if (curInfo.revision > this.projects[this.projectSelect].lastPackRevision) {
-                            curInfo.isSelected = true;
-                            newRevisionCount ++;
-                        } else {
-                            curInfo.isSelected = false;
+                    // 当前最小的版本号仍比上次打包版本号小时，递归加载列表直到最小版本号比上次打包版本号小，深度为5
+                    var lastPackRevision = this.projects[this.projectSelect].lastPackRevision;
+                    var depth = 5;
+                    this.recursionDepth = 0;
+                    this.refresh2PackLastRevision(depth, lastPackRevision, function() {
+                        var newRevisionCount = 0;
+                        for (var i = 0; i < vueApp.logInfos.length; i++) {
+                            var curInfo = vueApp.logInfos[i];
+                            if (curInfo.revision > lastPackRevision) {
+                                console.log("select #" + curInfo.revision);
+                                curInfo.isSelected = true;
+                                newRevisionCount ++;
+                            } else {
+                                curInfo.isSelected = false;
+                            }
                         }
-                    }
 
-                    this.updateLogInfoSelected();
+                        vueApp.updateLogInfoSelected();
 
-                    if (newRevisionCount > 0) {
-                        this.packageUpdate(this.logInfoSelected);
+                        if (newRevisionCount > 0) {
+                            vueApp.packageUpdate(vueApp.logInfoSelected);
+                        } else {
+                            layer.msg("继上次打包后无更新版本，快速打包失败。<br/>请选择需要打包的版本进行打包。", {icon: 2});
+                        }
+                    });
+                },
+                /**
+                 * 递归加载提交版本到上次打包版本前
+                 * @param depth 递归深度
+                 * @param lastPackRevision 上次打包版本
+                 * @param func 递归满足后调用的方法
+                 * @returns boolean 如果在递归深度内获取到上次打包版本，则返回true；否则返回false
+                 */
+                refresh2PackLastRevision: function(depth, lastPackRevision, func){
+                    vueApp.recursionDepth++;
+                    console.log("recursionDepth ==> " + vueApp.recursionDepth);
+                    var lowestRevision = vueApp.logInfos[vueApp.logInfos.length - 1].revision;
+                    console.log("lowestRevision ==> " + lowestRevision);
+                    console.log("depth ==> " + depth);
+                    if (lowestRevision > lastPackRevision && vueApp.recursionDepth <= depth && !vueApp.isLastLogInfo) {
+                        var data = {
+                            projectSelect: vueApp.projectSelect,
+                            lastRevision: vueApp.logInfos[vueApp.logInfos.length - 1].revision - 1
+                        };
+                        $.post("/pack/listMoreSvnLog", data, function (result) {
+                            if (result.success) {
+                                if (result.infos !== undefined && result.infos.length > 0) {
+                                    for (var i = 0; i < result.infos.length; i++) {
+                                        vueApp.logInfos.push(result.infos[i]);
+                                    }
+                                }
+
+                                if (result.infos.length < 10) {
+                                    vueApp.isLastLogInfo = true;
+                                }
+
+                                return vueApp.refresh2PackLastRevision(depth, lastPackRevision, func);
+                            } else {
+                                layer.msg("加载更多失败！" + result.msg, {icon: 2});
+                            }
+                        });
+                    } else if (lowestRevision <= lastPackRevision) {
+                        if (typeof func === 'function') {
+                            func();
+                        }
                     } else {
-                        layer.msg("继上次打包后无更新版本，快速打包失败。<br/>请选择需要打包的版本进行打包。", {icon: 2});
+                        layer.msg("距上次打包版本后更新版本过多，快速打包失败！请手动选择版本进行打包。", {icon: 2});
                     }
                 },
                 listMoreLogInfo: function(){
@@ -427,7 +531,7 @@
                                 vueApp.isLastLogInfo = true;
                             }
                         } else {
-                            layer.msg("打包失败！" + result.msg, {icon: 2});
+                            layer.msg("加载更多失败！" + result.msg, {icon: 2});
                         }
                     });
                 }

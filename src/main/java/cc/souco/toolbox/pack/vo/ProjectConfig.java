@@ -15,6 +15,7 @@ public class ProjectConfig {
     private Long lastPackRevision;
     private boolean isLastPack;
     private boolean openDir;
+    private boolean isNeedZip;
 
     public ProjectConfig() {
         this.isLastPack = false;
@@ -83,6 +84,14 @@ public class ProjectConfig {
 
     public void setLastPackRevision(Long lastPackRevision) {
         this.lastPackRevision = lastPackRevision;
+    }
+
+    public boolean getIsNeedZip() {
+        return isNeedZip;
+    }
+
+    public void setIsNeedZip(boolean needZip) {
+        isNeedZip = needZip;
     }
 
     @Override

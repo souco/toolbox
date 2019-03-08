@@ -2,7 +2,7 @@ package cc.souco.toolbox.pack.vo;
 
 public class PackageParameterVo {
     ProjectConfig config;
-    SvnLogInfo info;
+    SvnLogInfoVo info;
 
     public ProjectConfig getConfig() {
         return config;
@@ -12,11 +12,11 @@ public class PackageParameterVo {
         this.config = config;
     }
 
-    public SvnLogInfo getInfo() {
+    public SvnLogInfoVo getInfo() {
         return info;
     }
 
-    public void setInfo(SvnLogInfo info) {
+    public void setInfo(SvnLogInfoVo info) {
         this.info = info;
     }
 }

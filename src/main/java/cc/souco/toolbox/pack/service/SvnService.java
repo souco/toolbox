@@ -5,10 +5,7 @@ import cc.souco.toolbox.common.FileKit;
 import cc.souco.toolbox.common.PathKit;
 import cc.souco.toolbox.common.StringKit;
 import cc.souco.toolbox.pack.UseSvnKit;
-import cc.souco.toolbox.pack.vo.ProjectConfig;
-import cc.souco.toolbox.pack.vo.SvnFileInfo;
-import cc.souco.toolbox.pack.vo.SvnLogInfo;
-import cc.souco.toolbox.pack.vo.SvnUser;
+import cc.souco.toolbox.pack.vo.*;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.beust.jcommander.internal.Lists;
@@ -253,7 +250,7 @@ public class SvnService {
      * @param info 打包的版本及文件信息
      * @param config 打包的项目配置信息
      */
-    public List<ProjectConfig> packageUpdate(SvnLogInfo info, ProjectConfig config) {
+    public List<ProjectConfig> packageUpdate(SvnLogInfoVo info, ProjectConfig config) {
         // 绝对路径
         String dateTimeProjectName = DateKit.dateToMilliStr() + "_" + config.getName();
         String finallyOutputBaseDir = config.getOutputPath() + File.separator + dateTimeProjectName;
@@ -314,11 +311,14 @@ public class SvnService {
         }
 
         // 生成打包信息
-        all.append("最新版本号：").append(info.getRevision()).append("\r\n")
-                .append("最新提交人：").append(info.getAuthor()).append("\r\n")
+        all.append("最新提交人：").append(info.getAuthor()).append("\r\n")
                 .append("最后提交时间：").append(DateKit.format(info.getDate(), DateKit.DATE_TIME_FORMAT)).append("\r\n")
-                .append("最后提交说明：").append(info.getRemark()).append("\r\n")
-                .append("更新包打包时间：").append(DateKit.format(DateKit.DATE_TIME_FORMAT)).append("\r\n");
+                .append("更新包打包时间：").append(DateKit.format(DateKit.DATE_TIME_FORMAT)).append("\r\n")
+                .append("\r\n").append("涉及版本：").append("\r\n");
+
+        for (SvnLogInfo packInfo : info.getInfos()) {
+            all.append("#").append(packInfo.getRevision()).append(" ").append(packInfo.getRemark()).append("\r\n");
+        }
 
         all.append("\r\n").append("打包失败的文件：").append("\r\n");
         if (failure.length() > 0) {
@@ -342,6 +342,11 @@ public class SvnService {
         }
 
         FileKit.toFile(finallyOutputBaseDir + File.separator + "更新说明.txt", all.toString());
+
+        // 如果配置了打包后打开文件夹，则打开文件夹
+        if (config.getIsNeedZip()) {
+            FileKit.zipFiles(finallyOutputBaseDir, "*", finallyOutputBaseDir + ".zip");
+        }
 
         // 如果配置了打包后打开文件夹，则打开文件夹
         if (config.getOpenDir()) {
