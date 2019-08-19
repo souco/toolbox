@@ -5,6 +5,8 @@ import cc.souco.toolbox.pack.service.SvnService;
 import cc.souco.toolbox.pack.vo.*;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,13 +18,14 @@ import java.util.List;
 @Controller
 @RequestMapping("/pack")
 public class PackController {
+    private static Logger logger = LoggerFactory.getLogger(PackController.class);
 
     @Autowired
     private SvnService svnService;
 
     @RequestMapping("")
     public String pack(){
-        return "pack/index";
+        return "/pack/index";
     }
 
     @ResponseBody
@@ -58,7 +61,7 @@ public class PackController {
             svnService.saveSvnUser(user);
             ret.set("msg", "保存成功");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("", e);
             return ret.setFail(e.getMessage());
         }
         return ret;
@@ -81,7 +84,7 @@ public class PackController {
             svnService.saveProjectConfigs(configList);
             ret.set("msg", "保存成功").set("configs", configList);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("", e);
             return ret.setFail(e.getMessage());
         }
         return ret;
@@ -98,7 +101,7 @@ public class PackController {
             List<SvnLogInfo> infos = svnService.findSvnLog(user, config.getLocation(), null, null, 10);
             ret.set("msg", "保存成功").set("infos", infos);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("", e);
             return ret.setFail(e.getMessage());
         }
         return ret;
@@ -115,7 +118,7 @@ public class PackController {
             List<SvnLogInfo> infos = svnService.findSvnLog(user, config.getLocation(), lastRevision, null, 10);
             ret.set("infos", infos);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("", e);
             return ret.setFail(e.getMessage());
         }
         return ret;
@@ -129,7 +132,7 @@ public class PackController {
             List<ProjectConfig> configs = svnService.packageUpdate(packageVo.getInfo(), packageVo.getConfig());
             ret.set("msg", "保存成功").set("projects", configs);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("", e);
             return ret.setFail(e.getMessage());
         }
         return ret;

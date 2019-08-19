@@ -92,7 +92,7 @@ public class SvnService {
         try {
             svnInfo = svnClientManager.getWCClient().doInfo(new File(location), SVNRevision.HEAD);
         } catch (SVNException e) {
-            e.printStackTrace();
+            logger.error("获取SVN信息失败！", e);
             throw new RuntimeException("获取SVN信息失败！");
         }
 
@@ -116,7 +116,7 @@ public class SvnService {
             String finalProjectPrePath = svnInfo.getPath();
             svnClientManager.getLogClient().doLog(files, start, end, true, true, limit, svnLogEntry -> LogInfos.add(new SvnLogInfo(finalProjectPrePath, svnLogEntry)));
         } catch (SVNException e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
 
         return LogInfos;
@@ -141,7 +141,7 @@ public class SvnService {
         try {
             getSvnLogClient().doLog(files, revisionRanges, SVNRevision.HEAD, true, true, true, limit, null, svnLogEntry -> svnLogEntries.add(svnLogEntry));
         } catch (SVNException e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
 
         return svnLogEntries;

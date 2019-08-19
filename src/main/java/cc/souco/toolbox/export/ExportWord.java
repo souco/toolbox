@@ -1,13 +1,23 @@
 package cc.souco.toolbox.export;
 
+import cc.souco.toolbox.common.Encodes;
 import cc.souco.toolbox.common.FileKit;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 
 public class ExportWord {
 
@@ -27,7 +37,7 @@ public class ExportWord {
      * @param exportFilepath 导出的文件全路径，包含路径及文件名
      * @param data 导出的数据
      */
-    public void export(String template, String exportFilepath, Object data) {
+    public ExportWord export(String template, String exportFilepath, Object data) {
         // 创建导出文件
         File outFile = FileKit.newFileSafety(exportFilepath);
 
@@ -45,8 +55,11 @@ public class ExportWord {
 
         Writer out;
         try {
-            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile)));
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), "UTF-8"));
         } catch (FileNotFoundException e) {
+            logger.error("输出生成文件失败");
+            throw new RuntimeException(e);
+        } catch (UnsupportedEncodingException e) {
             logger.error("输出生成文件失败");
             throw new RuntimeException(e);
         }
@@ -56,9 +69,29 @@ public class ExportWord {
             exportTemplate.process(data, out);
             out.flush();
             out.close();
-        } catch (TemplateException | IOException e) {
-            e.printStackTrace();
+        } catch (TemplateException e) {
+            logger.error("", e);
+        } catch (IOException e) {
+            logger.error("", e);
         }
         logger.info("Word 文件导出成功：" + exportFilepath);
+        return this;
+    }
+
+    /**
+     * 输出到客户端
+     *
+     * @param fileName 输出文件名
+     */
+    public ExportWord write(HttpServletResponse response, String fileName, String filepath) {
+        response.reset();
+        response.setContentType("application/octet-stream; charset=utf-8");
+        response.setHeader("Content-Disposition", "attachment; filename=" + Encodes.urlEncode(fileName));
+        try {
+            response.getOutputStream().write(FileUtils.readFileToByteArray(new File(filepath)));
+        } catch (IOException e) {
+            logger.error("", e);
+        }
+        return this;
     }
 }

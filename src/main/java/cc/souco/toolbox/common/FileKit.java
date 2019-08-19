@@ -34,13 +34,13 @@ public class FileKit {
                 sb.append(data).append("\r\n");
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         } finally {
             try {
                 reader.close();
                 br.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("", e);
             }
         }
         return sb.toString();
@@ -133,7 +133,7 @@ public class FileKit {
             fileWriter.write(value);
             fileWriter.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
     }
 
@@ -249,7 +249,7 @@ public class FileKit {
             logger.debug(descFileName + " 文件压缩成功!");
         } catch (Exception e) {
             logger.debug("文件压缩失败：" + e.getMessage());
-            e.printStackTrace();
+            logger.error("", e);
         }
     }
 
@@ -270,7 +270,7 @@ public class FileKit {
                     zos.putNextEntry(entry);
                     zos.closeEntry();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("", e);
                 }
                 return;
             }
@@ -316,7 +316,7 @@ public class FileKit {
                 System.out
                         .println("添加文件 " + file.getAbsolutePath() + " 到zip文件中!");
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("", e);
             }
         }
     }
@@ -361,7 +361,7 @@ public class FileKit {
         try {
             addText2FileInRowCount(inFile, outFile, "commit;", 200L, 100000L, replaces);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
     }
 }

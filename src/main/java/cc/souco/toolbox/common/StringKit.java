@@ -36,6 +36,28 @@ public class StringKit {
         return false;
     }
 
+    public static boolean containsSpecialChar(String value) {
+        if (value != null && !"".equals(value)) {
+            Pattern p = Pattern.compile("\t|\r|\n|\f|\b|/|&|<|>|\\\\");
+            Matcher m = p.matcher(value);
+            return m.find();
+        }
+        return false;
+    }
+
+    public static String clearSpecialStr(String value) {
+        if (value != null && !"".equals(value)) {
+            Pattern p = Pattern.compile("\t|\r|\n|\f|\b");
+            Matcher m = p.matcher(value);
+            String temp = m.replaceAll("");
+
+            Pattern p2 = Pattern.compile("[/&<>\\\\]");
+            Matcher m2 = p2.matcher(temp);
+            return m2.replaceAll("");
+        }
+        return value;
+    }
+
     /**
      * 获取指定字符串出现的次数
      *
@@ -144,6 +166,20 @@ public class StringKit {
             return content.replaceAll("/", "\\\\");
         }
         return content;
+    }
+
+    /**
+     * 是否包含中文
+     * @param value 字符串
+     * @return 布尔值
+     */
+    public static boolean isContainChinese(String value) {
+        Pattern p = Pattern.compile("[\u4e00-\u9fa5]");
+        Matcher m = p.matcher(value);
+        if (m.find()) {
+            return true;
+        }
+        return false;
     }
 
 	public static void main(String[] args) {

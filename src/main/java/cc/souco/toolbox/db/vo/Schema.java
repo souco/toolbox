@@ -8,7 +8,7 @@ public class Schema {
 
     private String name;
     private List<Table> tables;
-        private List<String> excluded;
+    private List<String> views;
     private List<String> synonyms;
 
     // 行数有序表
@@ -17,7 +17,7 @@ public class Schema {
     // 行数最多
     private List<Table> maxRowTables;
 
-    // 行数最多
+    // 空表
     private List<Table> emptyRowTables;
 
     // 行数最少
@@ -39,15 +39,15 @@ public class Schema {
         this.tables = tables;
     }
 
-    public List<String> getExcluded() {
-        if (excluded == null) {
-            excluded = Lists.newArrayList();
+    public List<String> getViews() {
+        if (views == null) {
+            views = Lists.newArrayList();
         }
-        return excluded;
+        return views;
     }
 
-    public void setExcluded(List<String> excluded) {
-        this.excluded = excluded;
+    public void setViews(List<String> views) {
+        this.views = views;
     }
 
     public List<String> getSynonyms() {

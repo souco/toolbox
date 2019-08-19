@@ -4,15 +4,28 @@ import com.beust.jcommander.internal.Lists;
 import com.beust.jcommander.internal.Maps;
 import nl.basjes.parse.useragent.UserAgent;
 import nl.basjes.parse.useragent.UserAgentAnalyzer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class LogAnalyzeUtil {
+    private static Logger logger = LoggerFactory.getLogger(LogAnalyzeUtil.class);
     private static final String LOG_FILE_PATH = "D:\\ProjectData\\logs";
     private static final List<String> analyse = Lists.newArrayList("ip", "contentType", "url", "httpMethod", "userAgent");
     private static UserAgentAnalyzer uaa = null;
@@ -41,7 +54,7 @@ public class LogAnalyzeUtil {
             analysisList.sort((o1, o2) -> o2.getValue() - o1.getValue());
             int sum = 0;
             for (Map.Entry<String, Integer> analyze : analysisList) {
-                sum +=  analyze.getValue();
+                sum += analyze.getValue();
             }
 
             System.out.println();
@@ -62,6 +75,7 @@ public class LogAnalyzeUtil {
 
     /**
      * 对日志做一级分类统计
+     *
      * @param filePath 文件路径
      * @param analysis 分析的字段
      * @return 分析结果
@@ -110,34 +124,34 @@ public class LogAnalyzeUtil {
             return result;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         } finally {
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("", e);
                 }
             }
             if (bufferedInputStream != null) {
                 try {
                     bufferedInputStream.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("", e);
                 }
             }
             if (inputStreamReader != null) {
                 try {
                     inputStreamReader.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("", e);
                 }
             }
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("", e);
                 }
             }
         }
@@ -147,10 +161,11 @@ public class LogAnalyzeUtil {
 
     /**
      * 对部分统计做二次处理
+     *
      * @param firstAnalyze 第一次分类处理的结果
      * @return 分析结果，两层Map
      */
-    public static Map<String, Map<String, Integer>> analyzeSecond(Map<String, Map<String, Integer>> firstAnalyze){
+    public static Map<String, Map<String, Integer>> analyzeSecond(Map<String, Map<String, Integer>> firstAnalyze) {
         Map<String, Map<String, Integer>> result = Maps.newHashMap();
 
         Set<Map.Entry<String, Map<String, Integer>>> mapEntries = firstAnalyze.entrySet();
@@ -194,7 +209,7 @@ public class LogAnalyzeUtil {
         return firstAnalyze;
     }
 
-    private static UserAgentAnalyzer getUserAgentAnalyzer(){
+    private static UserAgentAnalyzer getUserAgentAnalyzer() {
         if (null == uaa) {
             uaa = UserAgentAnalyzer.newBuilder().hideMatcherLoadStats().withCache(25000).build();
         }

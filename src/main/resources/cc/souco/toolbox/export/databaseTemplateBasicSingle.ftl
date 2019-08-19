@@ -122,7 +122,7 @@
                                 <w:sz w:val="28"/>
                                 <w:szCs w:val="28"/>
                             </w:rPr>
-                            <w:t>${schema.name!}</w:t>
+                            <w:t>表</w:t>
                         </w:r>
                     </w:p>
                     <#list schema.tables as table>
@@ -533,23 +533,25 @@
                     <w:p w14:paraId="4A10F624" w14:textId="77777777" w:rsidR="00995067" w:rsidRDefault="00995067"
                          w:rsidP="00995067"/>
                     </#list>
-                    <w:p w14:paraId="65C094B1" w14:textId="77777777" w:rsidR="00995067" w:rsidRPr="00A43F79"
-                         w:rsidRDefault="00995067" w:rsidP="00995067">
+
+                    <#if schema.views?? && schema.views!?size gt 0>
+                    <w:p w14:paraId="7DE28B36" w14:textId="77777777" w:rsidR="00AD0041" w:rsidRDefault="00AD0041"
+                         w:rsidP="00AD0041">
                         <w:pPr>
-                            <w:pStyle w:val="2"/>
+                            <w:pStyle w:val="1"/>
                             <w:rPr>
-                                <w:sz w:val="21"/>
+                                <w:sz w:val="28"/>
+                                <w:szCs w:val="28"/>
                             </w:rPr>
                         </w:pPr>
-                        <w:r w:rsidRPr="00A43F79">
+                        <w:r>
                             <w:rPr>
                                 <w:rFonts w:hint="eastAsia"/>
-                                <w:sz w:val="24"/>
+                                <w:sz w:val="28"/>
+                                <w:szCs w:val="28"/>
                             </w:rPr>
-                            <w:t>排除表</w:t>
+                            <w:t>视图</w:t>
                         </w:r>
-                        <w:bookmarkStart w:id="0" w:name="_GoBack"/>
-                        <w:bookmarkEnd w:id="0"/>
                     </w:p>
                     <w:tbl>
                         <w:tblPr>
@@ -599,12 +601,12 @@
                                         <w:rPr>
                                             <w:rFonts w:hint="eastAsia"/>
                                         </w:rPr>
-                                        <w:t>字段名</w:t>
+                                        <w:t>名称</w:t>
                                     </w:r>
                                 </w:p>
                             </w:tc>
                         </w:tr>
-                        <#list schema.excluded as exclude>
+                        <#list schema.views as view>
                         <w:tr w:rsidR="00995067" w14:paraId="3A5AD7AE" w14:textId="77777777" w:rsidTr="00866BA0">
                             <w:tc>
                                 <w:tcPr>
@@ -619,7 +621,7 @@
                                         <w:rPr>
                                             <w:rFonts w:hint="eastAsia"/>
                                         </w:rPr>
-                                        <w:t>${exclude_index + 1}</w:t>
+                                        <w:t>${view_index + 1}</w:t>
                                     </w:r>
                                 </w:p>
                             </w:tc>
@@ -633,15 +635,17 @@
                                         <w:rPr>
                                             <w:rFonts w:hint="eastAsia"/>
                                         </w:rPr>
-                                        <w:t>${exclude!}</w:t>
+                                        <w:t>${view!}</w:t>
                                     </w:r>
                                 </w:p>
                             </w:tc>
                         </w:tr>
                         </#list>
                     </w:tbl>
+                    </#if>
                     <w:p w14:paraId="07553C56" w14:textId="50F8150B" w:rsidR="00BC0B57" w:rsidRDefault="00BC0B57"/>
                     </#if>
+                    <#if schema.synonyms!?size gt 0>
                     <w:p w14:paraId="7DE28B36" w14:textId="77777777" w:rsidR="00AD0041" w:rsidRDefault="00AD0041"
                          w:rsidP="00AD0041">
                         <w:pPr>
@@ -749,6 +753,7 @@
                         </w:tr>
                         </#list>
                     </w:tbl>
+                    </#if>
                     <w:p w14:paraId="584C35E4" w14:textId="77777777" w:rsidR="003D22D4" w:rsidRDefault="003D22D4"/>
                     <w:sectPr w:rsidR="003D22D4">
                         <w:pgSz w:w="11906" w:h="16838"/>

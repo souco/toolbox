@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>数据表</title>
+    <link type="text/css" rel="stylesheet" href="/css/db.css"/>
+    <link type="text/css" rel="stylesheet" href="/css/index.css"/>
+    <link type="text/css" rel="stylesheet" href="/third-party/bootstrap/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/third-party/font-awesome/css/font-awesome.min.css">
+    <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="/third-party/vue/vue.js"></script>
+    <style>
+        .template-list .template-item {
+            border: 1px solid #dfdfdf;
+            margin-right: 20px;
+            transition: all	.5s ease;
+            box-shadow: 0 0 24px rgba(9, 41, 77, 0.12);
+        }
+        .template-list .template-item:hover{
+            border-color: transparent;
+            -webkit-transform: translateY(-10px);
+            transform: translateY(-10px);
+        }
+        .template-list .template-item .top img {
+            display: block;
+            width: 300px;
+            height: 300px;
+        }
+        .template-list .template-item .bottom {
+            background: #fff;height:120px;padding:41px 35px 18px;
+        }
+
+    </style>
+    <script>
+        var vueApp;
+        $(function () {
+            vueApp = new Vue({
+                el: "#appDiv",
+                data: {
+                    templates: []
+                }
+            });
+
+
+            $.ajax({
+                type: "GET",
+                url: "/db/api/docTemplates",
+                success: function (result, textStatus, jqXHR) {
+                    vueApp.templates = result.templates;
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.error(jqXHR);
+                    console.error(textStatus);
+                    console.error(errorThrown);
+                    alert('获取数据库信息失败，错误信息： ' + textStatus);
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<header th:include="common/header :: header"></header>
+<div id="appDiv" class="content-center col-center-block">
+    <div class="text-center db-step">
+        <h2 class="h2">选择模板</h2>
+    </div>
+    <div class="container" style="padding-top: 50px; text-align: center;">
+        <div class="row">
+            <div class="col">
+                <div class="form-inline template-list" style="text-align: center;">
+                    <a v-for="(temp, index) in templates" :href="'/db/api/export?type=' + index" class="template-item">
+                        <div class="top">
+                            <img src="/image/templateClassic.png" :alt="temp.name">
+                        </div>
+                        <div class="bottom">
+                            <h2>{{temp.abbr}}</h2>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

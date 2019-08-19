@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-bind="http://www.w3.org/1999/xhtml"
-      xmlns:v-model="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml"
+      xmlns:v-model="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <title>模式</title>
     <link type="text/css" rel="stylesheet" href="/css/db.css"/>
+    <link type="text/css" rel="stylesheet" href="/css/index.css"/>
     <link type="text/css" rel="stylesheet" href="/third-party/bootstrap/css/bootstrap.css"/>
     <link rel="stylesheet" href="/third-party/font-awesome/css/font-awesome.min.css">
     <script type="text/javascript" src="/js/jquery-3.3.1.js"></script>
@@ -13,6 +14,7 @@
     <script>
 
         var vueApp;
+        var dbStatusCheck =
         $(function () {
             vueApp = new Vue({
                 el: "#appDiv",
@@ -69,11 +71,11 @@
                         $.ajax({
                             type: "POST",
                             data: {schemas: this.schemasSelect},
-                            url: "/api/db/schemas/select",
+                            url: "/db/api/schemas/select",
                             success: function (result, textStatus, jqXHR) {
                                 console.log(result);
                                 if (result.success) {
-                                    window.location.href = "/tables";
+                                    window.location.href = "/db/templates";
                                 } else {
                                     layer.alert(result.msg);
                                 }
@@ -89,14 +91,22 @@
                 }
             });
 
+            initSchemaLists();
+        });
+
+        function initSchemaLists(){
             $.ajax({
                 type: "GET",
-                url: "/api/db/schemas",
+                url: "/db/api/schemas",
                 success: function (result, textStatus, jqXHR) {
-                    vueApp.schemas = result;
-                    vueApp.schemas.sort();
-                    vueApp.hasSchemas = result > 0;
-                    vueApp.filterSchemas();
+                    if (result.success) {
+                        vueApp.schemas = result.schemas;
+                        vueApp.schemas.sort();
+                        vueApp.hasSchemas = result > 0;
+                        vueApp.filterSchemas();
+                    } else {
+                        layer.alert(result.msg);
+                    }
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     console.error(jqXHR);
@@ -105,13 +115,11 @@
                     alert('获取数据库信息失败，错误信息： ' + textStatus);
                 }
             });
-        });
+        }
     </script>
 </head>
 <body>
-<div class="text-center db-title">
-    <span>数据库工具</span>
-</div>
+<header th:include="common/header :: header"></header>
 <div id="appDiv" class="content-center col-center-block">
     <div class="text-center db-step">
         <h2 class="h2">选择数据库模式</h2>

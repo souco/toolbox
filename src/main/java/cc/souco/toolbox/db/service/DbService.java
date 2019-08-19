@@ -1,34 +1,47 @@
 package cc.souco.toolbox.db.service;
 
-import cc.souco.toolbox.db.dao.DbDao;
-import cc.souco.toolbox.db.vo.Table;
+import cc.souco.toolbox.db.vo.Database;
+import cc.souco.toolbox.db.vo.code.DbDocTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class DbService {
 
+    @Value("${jdbc.type}")
+    private String jdbcType;
+
     @Autowired
-    private DbDao dbDao;
+    private DbOracleDialect oracleDialect;
+    @Autowired
+    private DbMysqlDialect mysqlDialect;
 
-    public List<Map<String, Object>> testService(){
-        return dbDao.queryList();
+
+    private DbDialect getService() {
+        switch (jdbcType.toLowerCase()) {
+            case "oracle":
+                return oracleDialect;
+            case "mysql":
+                return mysqlDialect;
+            default:
+                return oracleDialect;
+        }
     }
 
-    public List<String> findSynonyms(String schema){
-        return dbDao.findSynonyms(schema);
+    public boolean testDbConnect() throws SQLException {
+        return getService().testDbConnect();
     }
 
-    public List<String> findSchemas(String schema){
-        return dbDao.findSchemas(schema);
+    public Database buildDatabase(List<String> schemas, DbDocTemplate docTemplate) {
+        return getService().buildDatabase(schemas, docTemplate);
     }
 
-    public List<Table> findTables(String schema){
-        return dbDao.findTables(schema);
+    public List<String> findSchemas() throws SQLException {
+        return getService().findSchemas();
     }
-
 
 }

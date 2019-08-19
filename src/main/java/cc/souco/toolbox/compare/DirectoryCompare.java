@@ -4,6 +4,8 @@ import cc.souco.toolbox.common.FileKit;
 import cc.souco.toolbox.common.StringKit;
 import com.beust.jcommander.internal.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -15,6 +17,7 @@ import java.util.List;
  * 目录比对
  */
 public class DirectoryCompare {
+    private static Logger logger = LoggerFactory.getLogger(DirectoryCompare.class);
     private static final String DIRECTORY_FILE_PREFIX = "│";
     private static final String DIRECTORY_SUFFIX = "├";
     private static final String DIRECTORY_SUFFIX2 = "└";
@@ -65,13 +68,13 @@ public class DirectoryCompare {
                 files.add(analyzeDirectory(directory, line));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         } finally {
             try {
                 reader.close();
                 br.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("", e);
             }
         }
         return files;
