@@ -5,7 +5,7 @@
 
 	<groupId>cc.souco.tool</groupId>
 	<artifactId>toolbox</artifactId>
-	<version>0.1.1-SNAPSHOT</version>
+	<version>1.0.0-RELEASE</version>
 	<packaging>jar</packaging>
 
 	<name>pack</name>
@@ -97,6 +97,14 @@
 			<version>14</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/ojdbc14.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>com.dm</groupId>
+			<artifactId>Dm7JdbcDriver16</artifactId>
+			<version>16</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/Dm7JdbcDriver16.jar</systemPath>
 		</dependency>
 
 		<dependency>

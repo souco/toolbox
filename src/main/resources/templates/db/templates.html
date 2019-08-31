@@ -68,7 +68,7 @@
         <div class="row">
             <div class="col">
                 <div class="form-inline template-list" style="text-align: center;">
-                    <a v-for="(temp, index) in templates" :href="'/db/api/export?type=' + index" class="template-item">
+                    <a v-for="(temp, index) in templates" :href="'/db/api/export?name=' + temp.name" class="template-item">
                         <div class="top">
                             <img src="/image/templateClassic.png" :alt="temp.name">
                         </div>

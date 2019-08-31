@@ -47,7 +47,8 @@ public class ExportWord {
 
         // 获取模板文件
         try {
-            exportTemplate = configuration.getTemplate(File.separator + template);
+            logger.info(template);
+            exportTemplate = configuration.getTemplate(template);
         } catch (IOException e) {
             logger.error("获取模板文件失败");
             throw new RuntimeException(e);

@@ -58,7 +58,7 @@ public class DbController {
     }
 
     @RequestMapping(value = "api/export", method = RequestMethod.GET)
-    public String exportRange(HttpServletRequest request, HttpServletResponse response, @RequestParam("type") Integer type){
+    public String exportRange(HttpServletRequest request, HttpServletResponse response, @RequestParam("name") String name){
         List<String> schemas;
         String template;
 
@@ -70,7 +70,7 @@ public class DbController {
             schemas = (List<String>) schemasObj;
         }
 
-        DbDocTemplate docTemplate = DbDocTemplate.fromCode(type);
+        DbDocTemplate docTemplate = DbDocTemplate.fromName(name);
 
         Database database = dbService.buildDatabase(schemas, docTemplate);
         database.setDate(new Date());

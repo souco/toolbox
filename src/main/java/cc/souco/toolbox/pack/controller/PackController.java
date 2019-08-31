@@ -25,7 +25,7 @@ public class PackController {
 
     @RequestMapping("")
     public String pack(){
-        return "/pack/index";
+        return "pack/index";
     }
 
     @ResponseBody

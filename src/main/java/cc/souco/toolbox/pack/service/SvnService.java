@@ -4,8 +4,11 @@ import cc.souco.toolbox.common.DateKit;
 import cc.souco.toolbox.common.FileKit;
 import cc.souco.toolbox.common.PathKit;
 import cc.souco.toolbox.common.StringKit;
-import cc.souco.toolbox.pack.UseSvnKit;
-import cc.souco.toolbox.pack.vo.*;
+import cc.souco.toolbox.pack.vo.ProjectConfig;
+import cc.souco.toolbox.pack.vo.SvnFileInfo;
+import cc.souco.toolbox.pack.vo.SvnLogInfo;
+import cc.souco.toolbox.pack.vo.SvnLogInfoVo;
+import cc.souco.toolbox.pack.vo.SvnUser;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.beust.jcommander.internal.Lists;
@@ -16,17 +19,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.tmatesoft.svn.core.SVNAuthenticationException;
 import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.auth.BasicAuthenticationManager;
-import org.tmatesoft.svn.core.wc.*;
+import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNInfo;
+import org.tmatesoft.svn.core.wc.SVNLogClient;
+import org.tmatesoft.svn.core.wc.SVNRevision;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class SvnService {
@@ -75,13 +78,6 @@ public class SvnService {
         return SVNClientManager.newInstance(null, authManager);
     }
 
-    @Deprecated
-    private SVNLogClient getSvnLogClient(){
-        BasicAuthenticationManager authManager = BasicAuthenticationManager.newInstance(UseSvnKit.SVN_NAME, UseSvnKit.SVN_PASSWORD.toCharArray());
-        SVNClientManager clientManager = SVNClientManager.newInstance(null, authManager);
-        return clientManager.getLogClient();
-    }
-
     public List<SvnLogInfo> findSvnLog(SvnUser user, String location, Long startRevision, Long endRevision, int limit){
         List<SvnLogInfo> LogInfos = Lists.newArrayList();
 
@@ -120,31 +116,6 @@ public class SvnService {
         }
 
         return LogInfos;
-    }
-
-    public List<SVNLogEntry> findSvnLogInRevisions(Set<Long> revisions, Integer limit){
-        List<SVNLogEntry> svnLogEntries = Lists.newArrayList();
-
-        File[] files = {new File(UseSvnKit.PROJECT_DIR)};
-
-        if (revisions.isEmpty()) {
-            return Lists.newArrayList();
-        }
-
-        Collection<SVNRevisionRange> revisionRanges = Lists.newArrayList();
-        for (Long revisionNumber : revisions) {
-            SVNRevision revision = SVNRevision.create(revisionNumber);
-            SVNRevisionRange range = new SVNRevisionRange(revision, revision);
-            revisionRanges.add(range);
-        }
-
-        try {
-            getSvnLogClient().doLog(files, revisionRanges, SVNRevision.HEAD, true, true, true, limit, null, svnLogEntry -> svnLogEntries.add(svnLogEntry));
-        } catch (SVNException e) {
-            logger.error("", e);
-        }
-
-        return svnLogEntries;
     }
 
     /**
@@ -342,6 +313,10 @@ public class SvnService {
         }
 
         FileKit.toFile(finallyOutputBaseDir + File.separator + "更新说明.txt", all.toString());
+        if (StringUtils.isNotBlank(config.getCompilePath())) {
+            String packInfoPath = new File(finallyOutputBaseDir + File.separator + config.getCompilePath()).getParentFile().getParentFile().getAbsolutePath();
+            FileKit.toFile(packInfoPath + File.separator + "META-INF" + File.separator + "PACK_INFO_" + DateKit.dateToMilliStr() + ".txt", all.toString());
+        }
 
         // 如果配置了打包后打开文件夹，则打开文件夹
         if (config.getIsNeedZip()) {

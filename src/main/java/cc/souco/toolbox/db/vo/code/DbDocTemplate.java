@@ -131,6 +131,10 @@ public enum DbDocTemplate {
         return showSynonyms;
     }
 
+    public String getName() {
+        return name();
+    }
+
     @Override
     public String toString() {
         JSONObject object = new JSONObject();

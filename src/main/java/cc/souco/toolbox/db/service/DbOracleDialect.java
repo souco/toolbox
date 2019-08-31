@@ -117,7 +117,7 @@ public class DbOracleDialect extends DbDialect {
         }
 
         Map<String, Integer> counts = Maps.newHashMap();
-        String columnCommentsSql = "select table_name, t.num_rows from tabs t";
+        String columnCommentsSql = "select table_name, t.num_rows from all_tables t";
         PreparedStatement ps = getConnection().prepareStatement(columnCommentsSql);
         ResultSet rs = ps.executeQuery();
         while (rs.next()) {
