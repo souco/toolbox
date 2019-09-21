@@ -225,6 +225,8 @@ public class SvnService {
         // 绝对路径
         String dateTimeProjectName = DateKit.dateToMilliStr() + "_" + config.getName();
         String finallyOutputBaseDir = config.getOutputPath() + File.separator + dateTimeProjectName;
+        String fullCompilePath = config.getLocation() + File.separator + config.getCompilePath();
+        String rootPath = FileKit.newFileSafety(fullCompilePath).getParentFile().getParentFile().getAbsolutePath();
 
         StringBuilder all = new StringBuilder();
         StringBuilder failure = new StringBuilder();
@@ -271,7 +273,12 @@ public class SvnService {
 
             for (File file : files) {
                 try {
-                    FileKit.copyFile(file, config.getLocation(), finallyOutputBaseDir);
+                    if (file.getCanonicalPath().contains(rootPath)) {
+                        FileKit.copyFile(file, rootPath, finallyOutputBaseDir + File.separator + "ROOT");
+                    } else {
+                        FileKit.copyFile(file, config.getLocation(), finallyOutputBaseDir);
+                    }
+
                     logger.info("copy success: " + fromRelationPath);
                     success.append(fileInfo.getChangeTypeStr()).append(" ").append(file.getAbsolutePath().substring(config.getLocation().length())).append("\r\n");
                 } catch (IOException e) {
@@ -313,9 +320,9 @@ public class SvnService {
         }
 
         FileKit.toFile(finallyOutputBaseDir + File.separator + "更新说明.txt", all.toString());
+        // 项目内的版本更新记录文件
         if (StringUtils.isNotBlank(config.getCompilePath())) {
-            String packInfoPath = new File(finallyOutputBaseDir + File.separator + config.getCompilePath()).getParentFile().getParentFile().getAbsolutePath();
-            FileKit.toFile(packInfoPath + File.separator + "META-INF" + File.separator + "PACK_INFO_" + DateKit.dateToMilliStr() + ".txt", all.toString());
+            FileKit.toFile(finallyOutputBaseDir + File.separator + "ROOT" + File.separator + "META-INF" + File.separator + "PACK_INFO_" + DateKit.dateToMilliStr() + ".txt", all.toString());
         }
 
         // 如果配置了打包后打开文件夹，则打开文件夹

@@ -127,6 +127,20 @@ public class FileKit {
         toFile(newFileSafety(fullFilename), value);
     }
 
+    public static void appendToFile(String fullFilename, String value){
+        appendToFile(newFileSafety(fullFilename), value);
+    }
+
+    public static void appendToFile(File file, String value){
+        try {
+            FileWriter fileWriter = new FileWriter(file, true);
+            fileWriter.write(value);
+            fileWriter.close();
+        } catch (IOException e) {
+            logger.error("", e);
+        }
+    }
+
     public static void toFile(File file, String value){
         try {
             FileWriter fileWriter = new FileWriter(file);

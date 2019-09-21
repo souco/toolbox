@@ -2,6 +2,7 @@ package cc.souco.toolbox.pack.vo;
 
 import cc.souco.toolbox.common.DateKit;
 import cc.souco.toolbox.common.StringKit;
+import com.alibaba.fastjson.annotation.JSONField;
 import com.beust.jcommander.internal.Lists;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNLogEntryPath;
@@ -14,6 +15,7 @@ public class SvnLogInfo {
     private Long revision;
     private String remark;
     private String author;
+    @JSONField(format="yyyy-MM-dd HH:mm:ss")
     private Date date;
     private List<SvnFileInfo> files;
     boolean isSelected;
