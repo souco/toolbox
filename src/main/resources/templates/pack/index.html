@@ -36,6 +36,10 @@
         .self-checkbox:checked + label:after {
             content:"\2714";
         }
+
+        .table th, .table td {
+            padding: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -71,10 +75,10 @@
                     <tbody>
                     <tr v-if="logInfos.length > 0" v-for="(logInfo, index) in logInfos" @mouseover="logInfosHover(index)" class="text-center">
                         <td class="align-middle">#{{logInfo.revision}}</td>
-                        <td class="align-middle">{{logInfo.date}}</td>
+                        <td class="align-middle" :title="logInfo.date">{{dateTimeFormat(logInfo.date)}}</td>
                         <td class="align-middle">{{logInfo.author}}</td>
                         <td style="padding-left: 0; padding-right:0;">
-                            <button v-if="!logInfo.isSelected && logInfo.revision <= projects[projectSelect].lastPackRevision" class="btn-sm btn-outline-primary" @click="selectSvnLog(index)">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
+                            <button v-if="!logInfo.isSelected && (logInfo.revision <= projects[projectSelect].lastPackRevision || projects[projectSelect].lastPackRevision == null)" class="btn-sm btn-outline-primary" @click="selectSvnLog(index)">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
                             <button v-if="!logInfo.isSelected && logInfo.revision > projects[projectSelect].lastPackRevision" class="btn-sm btn-outline-success" @click="selectSvnLog(index)" title="上次打包之后的新提交">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
                             <button v-if="logInfo.isSelected" class="btn-sm btn-outline-danger" @click="unSelectSvnLog(index)">取消 <i class="fa fa-chevron-left" aria-hidden="true"></i></button>
                         </td>
@@ -377,6 +381,11 @@
                 unSelectSvnLog: function(index) {
                     this.logInfos[index].isSelected = false;
                     this.updateLogInfoSelected()
+                },
+                dateTimeFormat: function(dateTimeStr) {
+                    if (dateTimeStr && dateTimeStr.length === 19) {
+                        return dateTimeStr.substring(5);
+                    }
                 },
                 updateLogInfoSelected: function () {
                     var latestInfo = {};
