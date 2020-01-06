@@ -78,9 +78,7 @@
                         <td class="align-middle" :title="logInfo.date">{{dateTimeFormat(logInfo.date)}}</td>
                         <td class="align-middle">{{logInfo.author}}</td>
                         <td style="padding-left: 0; padding-right:0;">
-                            <button v-if="!logInfo.isSelected && (logInfo.revision <= projects[projectSelect].lastPackRevision || projects[projectSelect].lastPackRevision == null)" class="btn-sm btn-outline-primary" @click="selectSvnLog(index)">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
-                            <button v-if="!logInfo.isSelected && logInfo.revision > projects[projectSelect].lastPackRevision" class="btn-sm btn-outline-success" @click="selectSvnLog(index)" title="上次打包之后的新提交">选择 <i class="fa fa-chevron-right" aria-hidden="true"></i></button>
-                            <button v-if="logInfo.isSelected" class="btn-sm btn-outline-danger" @click="unSelectSvnLog(index)">取消 <i class="fa fa-chevron-left" aria-hidden="true"></i></button>
+                            <button :class="'btn-sm ' + btnClass(logInfo)" @click="selectSvnLog(index, $event)">{{btnStrClass(logInfo)}} <i :class="'fa ' + btnIconClass(logInfo)" aria-hidden="true"></i></button>
                         </td>
                     </tr>
                     <tr v-if="logInfos.length <= 0">
@@ -113,9 +111,9 @@
                     <span>涉及文件：</span>
                     <table style="table-layout: fixed; word-wrap: break-word; width: 100%; max-width: 100%;">
                         <tr>
-                            <th style="width: 10%;">序号</th>
+                            <th style="width: 15%;">序号</th>
                             <th style="width: 10%;">类型</th>
-                            <th style="width: 80%;">文件路径</th>
+                            <th style="width: 75%;">文件路径</th>
                         </tr>
                         <tr v-for="(file, index) in logInfo.files" style="vertical-align: top;">
                             <td>{{index + 1}}/{{logInfo.files.length}}</td>
@@ -154,9 +152,9 @@
                         <span>打包涉及文件：</span>
                         <table style="table-layout: fixed; word-wrap: break-word; width: 100%; max-width: 100%;">
                             <tr>
-                                <th style="width: 10%;">序号</th>
+                                <th style="width: 15%;">序号</th>
                                 <th style="width: 10%;">类型</th>
-                                <th style="width: 80%;">文件路径</th>
+                                <th style="width: 75%;">文件路径</th>
                             </tr>
                             <tr v-for="(file, index) in logInfoSelected.files" style="vertical-align: top;">
                                 <td>{{index + 1}}/{{logInfoSelected.files.length}}</td>
@@ -294,6 +292,7 @@
                 logInfo: {},
                 logInfoSelected: {},
                 isLastLogInfo: false,
+                lastSelectedIndex: -1,
                 recursionDepth: 0
             },
             methods: {
@@ -374,13 +373,41 @@
                         this.logInfosHoverIndex = index;
                     }
                 },
-                selectSvnLog: function(index) {
-                    this.logInfos[index].isSelected = true;
+                selectSvnLog: function(index, event) {
+                    if (event.shiftKey && this.lastSelectedIndex > -1) {
+                        // 按住shift键的话，将上次点击的操作作用到shift前后两次点击之间的所有列
+                        var value = this.logInfos[this.lastSelectedIndex].isSelected;
+                        var min = Math.min(index, this.lastSelectedIndex);
+                        var max = Math.max(index, this.lastSelectedIndex);
+                        for (var curIndex = min; curIndex <= max; ++curIndex) {
+                            this.logInfos[curIndex].isSelected = value;
+                        }
+                    } else {
+                        this.lastSelectedIndex = index;
+                        this.logInfos[index].isSelected = !Boolean(this.logInfos[index].isSelected);
+                    }
                     this.updateLogInfoSelected()
                 },
-                unSelectSvnLog: function(index) {
-                    this.logInfos[index].isSelected = false;
-                    this.updateLogInfoSelected()
+                btnClass: function(logInfo) {
+                    if (logInfo.isSelected) {
+                        return "btn-outline-danger";
+                    } else if (this.projects[this.projectSelect].lastPackRevision &&
+                        logInfo.revision > this.projects[this.projectSelect].lastPackRevision) {
+                        return "btn-outline-success";
+                    }
+                    return "btn-outline-primary";
+                },
+                btnStrClass: function(logInfo) {
+                    if (logInfo.isSelected) {
+                        return "取消";
+                    }
+                    return "选择";
+                },
+                btnIconClass: function(logInfo) {
+                    if (logInfo.isSelected) {
+                        return "fa-chevron-left";
+                    }
+                    return "fa-chevron-right";
                 },
                 dateTimeFormat: function(dateTimeStr) {
                     if (dateTimeStr && dateTimeStr.length === 19) {
