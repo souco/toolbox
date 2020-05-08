@@ -1,5 +1,6 @@
 package cc.souco.toolbox.db.service;
 
+import cc.souco.toolbox.common.StringKit;
 import cc.souco.toolbox.db.vo.Column;
 import cc.souco.toolbox.db.vo.Database;
 import cc.souco.toolbox.db.vo.Schema;
@@ -19,6 +20,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -44,6 +46,10 @@ public class DbDialect {
     protected Integer enumerableValueMaxCount;
     @Value("${db.enumerableValueTotalCharCount}")
     protected Integer enumerableValueTotalCharCount;
+    @Value("${table.include}")
+    protected String tableInclude;
+    @Value("${table.exclude}")
+    protected String tableExclude;
 
     private DatabaseMetaData dbMetaData = null;
     private Connection con = null;
@@ -136,12 +142,31 @@ public class DbDialect {
         List<Table> tables = Lists.newArrayList();
         try {
             ResultSet tableRs = getDatabaseMetaData().getTables(getConnection().getCatalog(), schemaName, "%%", new String[]{TYPE_TABLE});
+
+            List<String> includeTables = Lists.newArrayList();
+            List<String> excludeTables = Lists.newArrayList();
+            if (StringUtils.isNotBlank(tableInclude)) {
+                includeTables.addAll(Arrays.asList(tableInclude.split(",")));
+            } else if (StringUtils.isNotBlank(tableExclude)) {
+                excludeTables.addAll(Arrays.asList(tableExclude.split(",")));
+            }
+
             while (tableRs.next()) {
                 String tableName = tableRs.getString("TABLE_NAME");  // 表名
 
                 // 排除系统表
                 if (tableName.contains("BIN$") || tableName.contains("SESSION")) {
                     continue;
+                } else if (!includeTables.isEmpty()) {
+                    // include 过滤
+                    if (!includeTables.contains(tableName.toLowerCase())) {
+                        continue;
+                    }
+                } else if (!excludeTables.isEmpty()) {
+                    // exclude 过滤
+                    if (excludeTables.contains(tableName.toLowerCase())) {
+                        continue;
+                    }
                 }
 
                 String tableType = tableRs.getString("TABLE_TYPE");  // 表类型
@@ -201,7 +226,10 @@ public class DbDialect {
                 }
                 dataTypeName = ColumnType.TS.name();
             }
-            String remarks = columnRs.getString("REMARKS");  // 列描述
+            String remarks = StringKit.clearSpecialStr(columnRs.getString("REMARKS"));  // 列描述
+            if (StringUtils.isNotBlank(remarks) && remarks.contains("?")) {
+                remarks = "";
+            }
             String columnDef = columnRs.getString("COLUMN_DEF");  // 默认值
             String isNullable = columnRs.getString("IS_NULLABLE");
             boolean isNullAble = BOOLEAN_YES.equalsIgnoreCase(isNullable);

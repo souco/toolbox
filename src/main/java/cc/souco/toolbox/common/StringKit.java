@@ -47,7 +47,7 @@ public class StringKit {
 
     public static String clearSpecialStr(String value) {
         if (value != null && !"".equals(value)) {
-            Pattern p = Pattern.compile("\t|\r|\n|\f|\b");
+            Pattern p = Pattern.compile("\t|\r|\n|\f|\b|\\?");
             Matcher m = p.matcher(value);
             String temp = m.replaceAll("");
 
