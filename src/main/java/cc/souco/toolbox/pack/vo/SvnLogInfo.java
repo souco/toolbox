@@ -50,7 +50,7 @@ public class SvnLogInfo {
             }
 
             String relationPath = StringKit.removeSlashAndBackslashPrefix(path.getPath());
-            if (relationPath.startsWith(projectPrePath)) {
+            if (relationPath.startsWith(projectPrePath + "/")) {
                 files.add(new SvnFileInfo(relationPath.substring(relationPath.indexOf(projectPrePath) + projectPrePath.length()), changeType, fileType));
             }
         }
